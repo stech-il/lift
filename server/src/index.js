@@ -1,3 +1,4 @@
+import "dotenv/config";
 import http from "http";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import express from "express";
@@ -581,6 +582,7 @@ app.get("/api/auth/status", (req, res) => {
 
 /** הגדרות ציבוריות לדף ההתחברות (ללא סודות) */
 app.get("/api/auth/public-config", (req, res) => {
+  res.set("Cache-Control", "no-store, max-age=0");
   res.json({
     googleClientId: getGoogleClientId(),
     mailConfigured: isMailConfigured(),
@@ -860,6 +862,7 @@ app.get("/api/admin/settings", adminAuth, requireAdminOnly, (req, res) => {
       from: smtp.from,
       smtpPassConfigured: smtp.smtpPassConfigured,
     },
+    googleClientId: getGoogleClientId(),
   });
 });
 
@@ -867,30 +870,38 @@ app.put("/api/admin/settings", adminAuth, requireAdminOnly, (req, res) => {
   if (req.body && req.body.clearFromDatabase === true) {
     for (const k of SMTP_KEYS) deleteAppSettingKey(k);
     resetMailTransporter();
-    return res.json({ ok: true, smtp: getEffectiveSmtpForAdmin() });
+    return res.json({ ok: true, smtp: getEffectiveSmtpForAdmin(), googleClientId: getGoogleClientId() });
   }
   const sm = req.body?.smtp;
-  if (!sm || typeof sm !== "object" || Array.isArray(sm)) {
-    return res.status(400).json({ error: "חסר אובייקט smtp" });
+  const hasSmtp = sm && typeof sm === "object" && !Array.isArray(sm);
+  const gRaw = req.body?.googleClientId;
+  const hasGoogle = typeof gRaw === "string";
+  if (!hasSmtp && !hasGoogle) {
+    return res.status(400).json({ error: "חסר smtp או googleClientId" });
   }
-  if (typeof sm.host === "string") setAppSettingKey("smtp_host", sm.host);
-  if (sm.port != null && sm.port !== "") {
-    const p = parseInt(String(sm.port), 10);
-    if (!Number.isFinite(p) || p < 1 || p > 65535) {
-      return res.status(400).json({ error: "פורט SMTP לא תקין" });
+  if (hasSmtp) {
+    if (typeof sm.host === "string") setAppSettingKey("smtp_host", sm.host);
+    if (sm.port != null && sm.port !== "") {
+      const p = parseInt(String(sm.port), 10);
+      if (!Number.isFinite(p) || p < 1 || p > 65535) {
+        return res.status(400).json({ error: "פורט SMTP לא תקין" });
+      }
+      setAppSettingKey("smtp_port", String(p));
     }
-    setAppSettingKey("smtp_port", String(p));
+    if (typeof sm.secure === "boolean") setAppSettingKey("smtp_secure", sm.secure ? "1" : "0");
+    if (typeof sm.user === "string") setAppSettingKey("smtp_user", sm.user);
+    if (typeof sm.from === "string") setAppSettingKey("mail_from", sm.from);
+    if (sm.smtpPassClear === true) {
+      setAppSettingKey("smtp_pass", "");
+    } else if (typeof sm.pass === "string" && sm.pass.length > 0) {
+      setAppSettingKey("smtp_pass", sm.pass);
+    }
+    resetMailTransporter();
   }
-  if (typeof sm.secure === "boolean") setAppSettingKey("smtp_secure", sm.secure ? "1" : "0");
-  if (typeof sm.user === "string") setAppSettingKey("smtp_user", sm.user);
-  if (typeof sm.from === "string") setAppSettingKey("mail_from", sm.from);
-  if (sm.smtpPassClear === true) {
-    setAppSettingKey("smtp_pass", "");
-  } else if (typeof sm.pass === "string" && sm.pass.length > 0) {
-    setAppSettingKey("smtp_pass", sm.pass);
+  if (hasGoogle) {
+    setAppSettingKey("google_client_id", gRaw.trim());
   }
-  resetMailTransporter();
-  res.json({ ok: true, smtp: getEffectiveSmtpForAdmin() });
+  res.json({ ok: true, smtp: getEffectiveSmtpForAdmin(), googleClientId: getGoogleClientId() });
 });
 
 app.post("/api/admin/settings/mail-test", adminAuth, requireAdminOnly, async (req, res) => {

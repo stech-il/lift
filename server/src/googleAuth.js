@@ -1,6 +1,12 @@
 import { OAuth2Client } from "google-auth-library";
+import { getAppSettingsRow } from "./db.js";
 
+/** מזהה לקוח Web (Google Cloud) — ב-DB או ב־GOOGLE_CLIENT_ID (סביבה). */
 export function getGoogleClientId() {
+  const row = getAppSettingsRow("google_client_id");
+  if (row && row.value != null && String(row.value).trim() !== "") {
+    return String(row.value).trim();
+  }
   return (process.env.GOOGLE_CLIENT_ID || "").trim();
 }
 

@@ -108,6 +108,30 @@
       width: 100%;
       max-width: 420px;
     }
+    .auth-or-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin: 0.85rem 0 0.5rem;
+      color: var(--muted-2);
+      font-size: 0.82rem;
+    }
+    .auth-or-divider::before,
+    .auth-or-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border-strong);
+    }
+    .google-signin-wrap .gsi-material-button,
+    .google-signin-wrap iframe,
+    .google-signin-wrap > div {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    .google-signin-wrap {
+      min-height: 40px;
+    }
     .app-footer-credit {
       margin: 0;
       font-size: 0.72rem;
@@ -1184,6 +1208,15 @@
       </div>
       <div id="loginBlock">
         <p class="field-label" style="margin-bottom:1rem;color:var(--muted);font-weight:400;">התחברות לממשק הניהול</p>
+        <p id="googleLoginIntro" class="field-hint hidden" style="margin:0 0 0.5rem;">מומלץ: לאחר שהמנהל הוסיף את המשתמש במערכת — אותו אימייל Google.</p>
+        <p id="googleSignInNotConfigured" class="field-hint hidden" style="margin:0 0 0.5rem;">
+          התחברות עם Google: המנהל מגדיר את <strong>Client ID</strong> תחת «הגדרות» → שמירה, או ב־<code dir="ltr">GOOGLE_CLIENT_ID</code> בשרת. לאחר שמירה — רענון המסך.
+        </p>
+        <div id="googleSignInWrap" class="google-signin-wrap" style="margin-top:0.35rem;display:none;flex-direction:column;align-items:stretch;gap:0.5rem;max-width:100%;"></div>
+        <div id="authOrDivider" class="auth-or-divider hidden" aria-hidden="true">
+          <span>או</span>
+        </div>
+        <p class="field-label" id="emailPasswordSectionLabel" style="margin-top:0.5rem;">התחברות באימייל</p>
         <label class="field-label" for="loginEmail">אימייל</label>
         <input id="loginEmail" type="email" dir="ltr" autocomplete="username" placeholder="admin@example.com" />
         <label class="field-label" for="loginPassword" style="margin-top:0.85rem;">סיסמה</label>
@@ -1203,7 +1236,6 @@
         <div style="margin-top:1.1rem;">
           <button type="button" class="btn btn-primary" id="btnLogin" style="width:100%;">התחבר</button>
         </div>
-        <div id="googleSignInWrap" style="margin-top:0.85rem;display:none;justify-content:center;"></div>
       </div>
       <div id="resetPasswordBlock" class="hidden">
         <p class="field-label" style="margin-bottom:1rem;color:var(--muted);font-weight:400;">איפוס סיסמה</p>
@@ -1752,6 +1784,18 @@
                   <input type="checkbox" id="setSmtpPassClear" />
                   מחק סיסמת SMTP שמורה (התחברות ללא סיסמה אם השרת מאפשר)
                 </label>
+                <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+                  <h3 style="font-size:0.95rem;font-weight:600;margin:0 0 0.5rem;">התחברות עם Google</h3>
+                  <p class="field-hint" style="margin:0 0 0.65rem;">
+                    לאחר שמירה, במסך ההתחברות יופיע כפתור Google. כל משתמש חייב להיות כבר קיים במערכת (אותו אימייל), והאימייל ב־Google חייב מומה.
+                  </p>
+                  <label class="field-label" for="setGoogleClientId">מזהה לקוח OAuth (Client ID) — Web application</label>
+                  <input id="setGoogleClientId" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder="....apps.googleusercontent.com" />
+                  <p class="field-hint" style="margin:0.35rem 0 0;">
+                    ב־ Google Cloud → APIs &amp; Services → Credentials: צור <strong>OAuth client ID</strong> מסוג <strong>Web application</strong>.
+                    ב־Authorized JavaScript origins הוסף את כתובת ממשק הניהול (למשל <code dir="ltr">https://lift.s-tech.co.il</code>). ריק כאן = שימוש ב־<code>GOOGLE_CLIENT_ID</code> מהסביבה בלבד.
+                  </p>
+                </div>
                 <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
                   <button type="button" class="btn btn-primary" id="btnSettingsSave">שמור הגדרות</button>
                   <button type="button" class="btn btn-ghost btn-sm" id="btnSettingsMailTest">שלח מייל בדיקה</button>
@@ -1788,7 +1832,11 @@
 
     async function loadAuthPublicConfig() {
       try {
-        authPublicConfig = await fetchJsonNoAuth("/api/auth/public-config");
+        const data = await fetchJsonNoAuth("/api/auth/public-config");
+        authPublicConfig = {
+          googleClientId: (data && data.googleClientId) || "",
+          mailConfigured: !!(data && data.mailConfigured),
+        };
       } catch {
         authPublicConfig = { googleClientId: "", mailConfigured: false };
       }
@@ -1802,14 +1850,45 @@
 
     function initGoogleSignIn() {
       const wrap = document.getElementById("googleSignInWrap");
-      if (!wrap || !authPublicConfig.googleClientId) return;
+      const intro = document.getElementById("googleLoginIntro");
+      const orEl = document.getElementById("authOrDivider");
+      const notCfg = document.getElementById("googleSignInNotConfigured");
+      const loginBlock = document.getElementById("loginBlock");
+      const cid = (authPublicConfig.googleClientId || "").trim();
+      if (!wrap) return;
+      if (!loginBlock || loginBlock.classList.contains("hidden")) {
+        if (intro) intro.classList.add("hidden");
+        if (orEl) orEl.classList.add("hidden");
+        if (notCfg) notCfg.classList.add("hidden");
+        wrap.style.display = "none";
+        return;
+      }
+      if (!cid) {
+        wrap.style.display = "none";
+        wrap.innerHTML = "";
+        if (intro) intro.classList.add("hidden");
+        if (orEl) orEl.classList.add("hidden");
+        if (notCfg) notCfg.classList.remove("hidden");
+        return;
+      }
+      if (notCfg) notCfg.classList.add("hidden");
       wrap.style.display = "flex";
+      if (intro) intro.classList.remove("hidden");
+      if (orEl) orEl.classList.remove("hidden");
+
       if (window.google && google.accounts && google.accounts.id) {
         renderGoogleSignInButton();
         return;
       }
       const existing = document.getElementById("gsiScript");
-      if (existing) return;
+      if (existing) {
+        if (window.google && google.accounts && google.accounts.id) {
+          renderGoogleSignInButton();
+        } else {
+          existing.addEventListener("load", () => renderGoogleSignInButton(), { once: true });
+        }
+        return;
+      }
       const s = document.createElement("script");
       s.id = "gsiScript";
       s.src = "https://accounts.google.com/gsi/client";
@@ -1821,13 +1900,19 @@
 
     function renderGoogleSignInButton() {
       const wrap = document.getElementById("googleSignInWrap");
-      const cid = authPublicConfig.googleClientId;
+      const cid = (authPublicConfig.googleClientId || "").trim();
       if (!wrap || !cid || !window.google || !google.accounts || !google.accounts.id) return;
       wrap.innerHTML = "";
+      try {
+        google.accounts.id.cancel();
+      } catch (_) {}
+      const w = Math.min(400, Math.max(240, (wrap.getBoundingClientRect && wrap.getBoundingClientRect().width) || 320));
       google.accounts.id.initialize({
         client_id: cid,
         callback: onGoogleCredential,
         ux_mode: "popup",
+        auto_select: false,
+        itp_support: true,
       });
       google.accounts.id.renderButton(wrap, {
         theme: "outline",
@@ -1835,13 +1920,18 @@
         text: "continue_with",
         shape: "rectangular",
         locale: "he",
-        width: 320,
+        width: w,
+        type: "standard",
       });
     }
 
     async function onGoogleCredential(resp) {
       const err = document.getElementById("loginErr");
-      err.textContent = "";
+      if (err) err.textContent = "";
+      if (!resp || !resp.credential) {
+        if (err) err.textContent = "התחברות עם Google בוטלה או לא הושלמה — נסה שוב.";
+        return;
+      }
       try {
         const data = await fetchJsonNoAuth("/api/auth/google", {
           method: "POST",
@@ -2373,6 +2463,13 @@
       document.getElementById("authWrap").classList.remove("hidden");
       document.getElementById("loginPanel").classList.remove("hidden");
       document.getElementById("app").classList.add("hidden");
+      loadAuthPublicConfig()
+        .then(() => {
+          initGoogleSignIn();
+        })
+        .catch(() => {
+          initGoogleSignIn();
+        });
     }
     function showLogin() {
       performLogout({});
@@ -3006,6 +3103,8 @@
           ? "מוגדרת סיסמה (מהשרת). הזנת ערך חדש מחליפה; ריק = ללא שינוי."
           : "לא הוגדרה סיסמה — השאר ריק אם אינך צריך אימות.";
       }
+      const gInp = document.getElementById("setGoogleClientId");
+      if (gInp) gInp.value = data.googleClientId != null ? String(data.googleClientId) : "";
     }
 
     document.getElementById("btnSettingsSave")?.addEventListener("click", async () => {
@@ -3018,6 +3117,7 @@
           user: document.getElementById("setSmtpUser")?.value?.trim() || "",
           from: document.getElementById("setMailFrom")?.value?.trim() || "",
         },
+        googleClientId: document.getElementById("setGoogleClientId")?.value?.trim() ?? "",
       };
       const p = document.getElementById("setSmtpPass")?.value || "";
       if (p) body.smtp.pass = p;
@@ -3027,7 +3127,8 @@
         try {
           authPublicConfig = await fetchJsonNoAuth("/api/auth/public-config");
         } catch (_) {}
-        toast("ההגדרות נשמרו");
+        initGoogleSignIn();
+        toast("ההגדרות נשמרו — במסך התחברות (או אחרי התנתקות) יוצג Google.");
         loadSettingsPage().catch(() => {});
       } catch (e) {
         toast(e.message || "שגיאה");
@@ -3631,7 +3732,6 @@
 
     (async function init() {
       await loadAuthPublicConfig();
-      initGoogleSignIn();
       const urlReset = new URLSearchParams(window.location.search).get("reset");
       if (urlReset && !accessToken) {
         document.getElementById("authWrap")?.classList.remove("hidden");
