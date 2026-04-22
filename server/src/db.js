@@ -116,6 +116,9 @@ db.exec(`
     db.exec(`ALTER TABLE users ADD COLUMN google_sub TEXT`);
     db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub) WHERE google_sub IS NOT NULL AND trim(google_sub) != ''`);
   }
+  if (!unames.has("display_name")) {
+    db.exec(`ALTER TABLE users ADD COLUMN display_name TEXT DEFAULT ''`);
+  }
 })();
 
 (() => {
@@ -380,7 +383,12 @@ export function countUsers() {
   return db.prepare(`SELECT COUNT(*) as c FROM users`).get().c;
 }
 
-export function createUser({ email, passwordHash, role = "editor", allowed_elevator_id = null }) {
+function normalizeDisplayName(raw) {
+  if (raw == null) return "";
+  return String(raw).trim().slice(0, 200);
+}
+
+export function createUser({ email, passwordHash, role = "editor", allowed_elevator_id = null, display_name = null }) {
   const id = randomUUID();
   const em = String(email).toLowerCase().trim();
   const created = Date.now();
@@ -391,14 +399,15 @@ export function createUser({ email, passwordHash, role = "editor", allowed_eleva
   } else if (allowed_elevator_id != null && String(allowed_elevator_id).trim() !== "") {
     aid = String(allowed_elevator_id).trim();
   }
+  const dname = normalizeDisplayName(display_name);
   db.prepare(
-    `INSERT INTO users (id, email, password_hash, created_at, role, allowed_elevator_id) VALUES (?,?,?,?,?,?)`
-  ).run(id, em, passwordHash, created, r, aid);
+    `INSERT INTO users (id, email, password_hash, created_at, role, allowed_elevator_id, display_name) VALUES (?,?,?,?,?,?,?)`
+  ).run(id, em, passwordHash, created, r, aid, dname);
   return getUserById(id);
 }
 
 export function updateUser(id, fields) {
-  const allowed = ["email", "password_hash", "role", "allowed_elevator_id"];
+  const allowed = ["email", "password_hash", "role", "allowed_elevator_id", "display_name"];
   const sets = [];
   const vals = [];
   for (const k of allowed) {
@@ -414,7 +423,9 @@ export function updateUser(id, fields) {
 }
 
 export function getUserById(id) {
-  return db.prepare(`SELECT id, email, created_at, role, allowed_elevator_id FROM users WHERE id = ?`).get(id);
+  return db
+    .prepare(`SELECT id, email, created_at, role, allowed_elevator_id, display_name FROM users WHERE id = ?`)
+    .get(id);
 }
 
 export function getUserByEmailForAuth(email) {
@@ -423,7 +434,9 @@ export function getUserByEmailForAuth(email) {
 
 export function listUsersSafe() {
   return db
-    .prepare(`SELECT id, email, created_at, role, allowed_elevator_id FROM users ORDER BY created_at ASC`)
+    .prepare(
+      `SELECT id, email, created_at, role, allowed_elevator_id, display_name FROM users ORDER BY created_at ASC`
+    )
     .all();
 }
 

@@ -234,6 +234,18 @@
       gap: 0.75rem;
       padding-bottom: 0.15rem;
     }
+    .sidebar-brand-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .sidebar-user-greeting {
+      margin: 0.45rem 0 0;
+      padding: 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.35;
+    }
     .sidebar-brand .title-block h1 {
       margin: 0;
       font-size: 1.12rem;
@@ -1250,7 +1262,9 @@
       </div>
       <div id="setupBlock" class="hidden">
         <p class="field-label" style="margin-bottom:1rem;color:var(--muted);font-weight:400;">אין עדיין משתמשים — צור מנהל ראשון</p>
-        <label class="field-label" for="setupEmail">אימייל</label>
+        <label class="field-label" for="setupName">שם (לתצוגה אחרי התחברות)</label>
+        <input id="setupName" type="text" autocomplete="name" placeholder="למשל: יעקב כהן" />
+        <label class="field-label" for="setupEmail" style="margin-top:0.85rem;">אימייל</label>
         <input id="setupEmail" type="email" dir="ltr" autocomplete="off" placeholder="admin@example.com" />
         <label class="field-label" for="setupPassword" style="margin-top:0.85rem;">סיסמה (לפחות 8 תווים)</label>
         <input id="setupPassword" type="password" autocomplete="new-password" />
@@ -1270,9 +1284,12 @@
     <div class="shell">
       <aside class="sidebar">
         <div class="sidebar-brand">
-          <div class="title-block">
-            <h1>Pirsum</h1>
-            <span id="sidebarSubtitle">לוח בקרה</span>
+          <div class="sidebar-brand-main">
+            <div class="title-block">
+              <h1>Pirsum</h1>
+              <span id="sidebarSubtitle">לוח בקרה</span>
+            </div>
+            <p id="sidebarUserGreeting" class="sidebar-user-greeting" hidden>שלום</p>
           </div>
           <div class="sidebar-actions">
             <button type="button" class="btn btn-ghost btn-sm" id="btnLogout" title="יציאה">יציאה</button>
@@ -1603,6 +1620,10 @@
               </div>
               <div class="users-add-grid">
                 <div>
+                  <label class="field-label" for="newUserName">שם</label>
+                  <input id="newUserName" type="text" placeholder="יוצג בברכה אחרי התחברות" autocomplete="name" />
+                </div>
+                <div>
                   <label class="field-label" for="newUserEmail">אימייל</label>
                   <input id="newUserEmail" type="email" dir="ltr" placeholder="user@example.com" autocomplete="off" />
                 </div>
@@ -1638,6 +1659,7 @@
                 <table class="users-table" id="usersTable">
                   <thead>
                     <tr>
+                      <th>שם</th>
                       <th>אימייל</th>
                       <th>תפקיד</th>
                       <th>גישה למסך</th>
@@ -1817,6 +1839,7 @@
     const STORAGE_KEY = "pirsum_access_token";
     const STORAGE_ROLE_KEY = "pirsum_user_role";
     const STORAGE_SCOPE_KEY = "pirsum_allowed_elevator";
+    const STORAGE_NAME_KEY = "pirsum_user_name";
     const IDLE_MS = 5 * 60 * 1000;
     const IDLE_GRACE_SEC = 5 * 60;
     let idleWatchTimer = null;
@@ -2061,6 +2084,20 @@
       updateSidebarSubtitle();
       setDetailReadonly();
       if (selectedId) renderMediaList();
+      updateUserGreeting();
+    }
+
+    function updateUserGreeting() {
+      const el = document.getElementById("sidebarUserGreeting");
+      if (!el) return;
+      const nm = (localStorage.getItem(STORAGE_NAME_KEY) || "").trim();
+      if (nm) {
+        el.textContent = "שלום, " + nm;
+        el.removeAttribute("hidden");
+      } else {
+        el.textContent = "שלום";
+        el.removeAttribute("hidden");
+      }
     }
 
     async function loadMe() {
@@ -2069,7 +2106,13 @@
         localStorage.setItem(STORAGE_ROLE_KEY, user.role || "admin");
         if (user.allowed_elevator_id) localStorage.setItem(STORAGE_SCOPE_KEY, user.allowed_elevator_id);
         else localStorage.removeItem(STORAGE_SCOPE_KEY);
+        if (user.name && String(user.name).trim()) {
+          localStorage.setItem(STORAGE_NAME_KEY, String(user.name).trim());
+        } else {
+          localStorage.removeItem(STORAGE_NAME_KEY);
+        }
       }
+      updateUserGreeting();
     }
 
     function toast(msg) {
@@ -2457,8 +2500,14 @@
       accessToken = "";
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem("pirsum_user_email");
+      localStorage.removeItem(STORAGE_NAME_KEY);
       localStorage.removeItem(STORAGE_ROLE_KEY);
       localStorage.removeItem(STORAGE_SCOPE_KEY);
+      const gEl = document.getElementById("sidebarUserGreeting");
+      if (gEl) {
+        gEl.setAttribute("hidden", "");
+        gEl.textContent = "שלום";
+      }
       if (idle) toast("המערכת התנתקה אחרי חוסר פעילות");
       document.getElementById("authWrap").classList.remove("hidden");
       document.getElementById("loginPanel").classList.remove("hidden");
@@ -2811,7 +2860,13 @@
         localStorage.setItem(STORAGE_ROLE_KEY, data.user.role || "admin");
         if (data.user.allowed_elevator_id) localStorage.setItem(STORAGE_SCOPE_KEY, data.user.allowed_elevator_id);
         else localStorage.removeItem(STORAGE_SCOPE_KEY);
+        if (data.user.name && String(data.user.name).trim()) {
+          localStorage.setItem(STORAGE_NAME_KEY, String(data.user.name).trim());
+        } else {
+          localStorage.removeItem(STORAGE_NAME_KEY);
+        }
       }
+      updateUserGreeting();
     }
 
     document.getElementById("btnLogin").onclick = async () => {
@@ -2848,9 +2903,10 @@
         return;
       }
       try {
+        const name = (document.getElementById("setupName")?.value || "").trim();
         const data = await fetchJsonNoAuth("/api/auth/register-first", {
           method: "POST",
-          body: JSON.stringify({ email, password: p1 }),
+          body: JSON.stringify({ email, password: p1, name }),
         });
         saveSession(data);
         showApp();
@@ -3326,6 +3382,16 @@
       const myEmail = (localStorage.getItem("pirsum_user_email") || "").toLowerCase();
       users.forEach((u) => {
         const tr = document.createElement("tr");
+        const displayName = (u.name != null && String(u.name) !== "" ? u.name : u.display_name) || "";
+        const tdName = document.createElement("td");
+        const nameInp = document.createElement("input");
+        nameInp.type = "text";
+        nameInp.placeholder = "שם";
+        nameInp.value = String(displayName);
+        nameInp.className = "user-name-inp";
+        nameInp.style.maxWidth = "12rem";
+        tdName.appendChild(nameInp);
+
         const tdEmail = document.createElement("td");
         const emailInp = document.createElement("input");
         emailInp.type = "email";
@@ -3377,7 +3443,7 @@
         saveBtn.className = "btn btn-primary btn-sm";
         saveBtn.textContent = "שמור";
         saveBtn.onclick = async () => {
-          const body = { email: emailInp.value.trim(), role: roleSel.value };
+          const body = { email: emailInp.value.trim(), role: roleSel.value, name: nameInp.value.trim() };
           if (body.role === "admin") body.allowed_elevator_id = null;
           else body.allowed_elevator_id = scopeSel.value || null;
           const pass = passInp.value.trim();
@@ -3413,6 +3479,7 @@
         }
         tdAct.appendChild(actWrap);
 
+        tr.appendChild(tdName);
         tr.appendChild(tdEmail);
         tr.appendChild(tdRole);
         tr.appendChild(tdScope);
@@ -3426,6 +3493,7 @@
     document.getElementById("newUserRole").addEventListener("change", syncNewUserScopeUi);
 
     document.getElementById("btnAddUser").onclick = async () => {
+      const name = (document.getElementById("newUserName")?.value || "").trim();
       const email = document.getElementById("newUserEmail").value.trim();
       const password = document.getElementById("newUserPassword").value;
       const role = document.getElementById("newUserRole").value;
@@ -3434,8 +3502,9 @@
       try {
         await api("/api/users", {
           method: "POST",
-          body: JSON.stringify({ email, password, role, allowed_elevator_id }),
+          body: JSON.stringify({ email, password, role, allowed_elevator_id, name }),
         });
+        document.getElementById("newUserName").value = "";
         document.getElementById("newUserEmail").value = "";
         document.getElementById("newUserPassword").value = "";
         document.getElementById("newUserRole").value = "editor";
@@ -3774,6 +3843,8 @@
         } catch {
           accessToken = "";
           localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem("pirsum_user_email");
+          localStorage.removeItem(STORAGE_NAME_KEY);
           localStorage.removeItem(STORAGE_ROLE_KEY);
           localStorage.removeItem(STORAGE_SCOPE_KEY);
           showLogin();

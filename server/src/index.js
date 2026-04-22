@@ -160,6 +160,20 @@ function normalizeAllowedElevatorId(raw) {
   return s === "" ? null : s;
 }
 
+/** אובייקט משתמש לתגובות JSON (ללא סודות) */
+function userPublicJson(u) {
+  if (!u) return null;
+  const name =
+    u.display_name != null && String(u.display_name).trim() !== "" ? String(u.display_name).trim() : "";
+  return {
+    id: u.id,
+    email: u.email,
+    name,
+    role: u.role,
+    allowed_elevator_id: u.allowed_elevator_id || null,
+  };
+}
+
 function playerAuth(req, res, next) {
   const token =
     req.headers.authorization?.replace(/^Bearer\s+/i, "") ||
@@ -254,6 +268,7 @@ const AUDIT_ELEV_FIELD_HE = {
 
 const AUDIT_USER_FIELD_HE = {
   email: "אימייל",
+  name: "שם",
   role: "תפקיד",
   allowed_elevator_id: "הגבלה למתקן",
 };
@@ -292,6 +307,9 @@ function buildAuditActionHebrew(req) {
 function describeUserBodyFields(sb) {
   const parts = [];
   if (sb.email) parts.push(`אימייל: ${sb.email}`);
+  if (sb.name != null && String(sb.name).trim() !== "") {
+    parts.push(`שם: ${String(sb.name).trim()}`);
+  }
   if (sb.role != null && sb.role !== "") {
     const r = String(sb.role);
     parts.push(`תפקיד: ${AUDIT_ROLE_HE[r] || r}`);
@@ -596,11 +614,12 @@ app.post("/api/auth/register-first", (req, res) => {
     const password = req.body?.password;
     if (!validateEmail(email)) return res.status(400).json({ error: "אימייל לא תקין" });
     if (!validatePassword(password)) return res.status(400).json({ error: "סיסמה: 8–128 תווים" });
-    const user = createUser({ email, passwordHash: hashPassword(password), role: "admin" });
+    const name = String(req.body?.name || "").trim().slice(0, 200);
+    const user = createUser({ email, passwordHash: hashPassword(password), role: "admin", display_name: name || null });
     const token = signUserToken(user);
     res.status(201).json({
       token,
-      user: { id: user.id, email: user.email, role: user.role, allowed_elevator_id: user.allowed_elevator_id || null },
+      user: userPublicJson(getUserById(user.id)),
     });
   } catch (e) {
     if (String(e.message || "").includes("UNIQUE")) {
@@ -627,7 +646,7 @@ app.post("/api/auth/login", (req, res) => {
   const token = signUserToken(user);
   res.json({
     token,
-    user: { id: user.id, email: user.email, role: user.role, allowed_elevator_id: user.allowed_elevator_id || null },
+    user: userPublicJson(user),
   });
 });
 
@@ -659,7 +678,7 @@ app.post("/api/auth/google", async (req, res) => {
     const token = signUserToken(user);
     res.json({
       token,
-      user: { id: user.id, email: user.email, role: user.role, allowed_elevator_id: user.allowed_elevator_id || null },
+      user: userPublicJson(user),
     });
   } catch (e) {
     const code = e.code || "";
@@ -717,7 +736,7 @@ app.post("/api/auth/reset-password", (req, res) => {
 app.get("/api/auth/me", adminAuth, (req, res) => {
   const u = getUserById(req.adminUser.id);
   if (!u) return res.status(401).json({ error: "Unauthorized" });
-  res.json({ user: { id: u.id, email: u.email, role: u.role, allowed_elevator_id: u.allowed_elevator_id || null } });
+  res.json({ user: userPublicJson(u) });
 });
 
 app.get("/api/users", adminAuth, (req, res) => {
@@ -742,7 +761,14 @@ app.post("/api/users", adminAuth, (req, res) => {
         return res.status(400).json({ error: "מתקן לא קיים" });
       }
     }
-    const user = createUser({ email, passwordHash: hashPassword(password), role, allowed_elevator_id });
+    const name = String(req.body?.name || "").trim().slice(0, 200);
+    const user = createUser({
+      email,
+      passwordHash: hashPassword(password),
+      role,
+      allowed_elevator_id,
+      display_name: name || null,
+    });
     const safe = getUserById(user.id);
     if (isMailConfigured()) {
       const origin = publicOrigin(req);
@@ -796,6 +822,9 @@ app.patch("/api/users/:id", adminAuth, (req, res) => {
       if (aid && !getElevatorById(aid)) return res.status(400).json({ error: "מתקן לא קיים" });
       updates.allowed_elevator_id = aid;
     }
+  }
+  if (body.name !== undefined) {
+    updates.display_name = String(body.name).trim().slice(0, 200);
   }
   if (!Object.keys(updates).length) return res.json(getUserById(id));
   const u = updateUser(id, updates);
