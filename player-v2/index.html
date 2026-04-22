@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data: https:; media-src 'self' blob: https:; connect-src 'self' https: wss: ws://localhost:* ws://127.0.0.1:* http://localhost:* http://127.0.0.1:*; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0e14" />
+  <title>פירסום מעלית — נגן V2</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="settings" class="settings-panel">
+    <h1>הגדרות נגן V2</h1>
+    <p class="hint">כתובת השרת ב־HTTPS בלבד (ללא סלאש בסוף), למעט פיתוח מקומי ב־http://localhost. הטוקן מהממשק ניהול.</p>
+    <label>כתובת שרת</label>
+    <input id="baseUrl" type="url" dir="ltr" placeholder="https://lift.s-tech.co.il" />
+    <label>טוקן מעלית</label>
+    <input id="token" type="password" dir="ltr" autocomplete="off" />
+    <label for="orientation">כיוון תצוגה במסך</label>
+    <select id="orientation">
+      <option value="portrait">מאונך (לאורך) — ברירת מחדל</option>
+      <option value="landscape">מאוזן (לרוחב)</option>
+    </select>
+    <p class="hint" style="margin-top:0.35rem;">הבחירה נשמרת במכשיר ונטענת בכל הפעלה.</p>
+
+    <div id="localDataSection" class="hidden" style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid #2a3544;">
+      <label>תיקיית נתונים מקומיים</label>
+      <p class="hint" style="margin:0 0 0.5rem;">מטמון לא מקוון (IndexedDB) והגדרות נשמרים במכשיר.</p>
+      <input id="localDataPath" type="text" readonly dir="ltr" style="font-size:0.82rem;cursor:default;" />
+      <div class="row" style="margin-top:0.5rem;">
+        <button type="button" id="btnOpenLocalDataFolder">פתח תיקייה ב־Explorer</button>
+        <button type="button" id="btnCopyLocalDataPath" class="ghost">העתק נתיב</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <button type="button" id="btnSaveSettings">שמור והפעל</button>
+    </div>
+    <p id="settingsMsg" class="hint"></p>
+  </div>
+
+  <div id="display" class="display hidden">
+    <div class="layout-root">
+      <!-- RTL: ימין לוגו | מרכז תאריך/שעה/מזג | שמאל טלפון -->
+      <header class="top-strip">
+        <div class="top-logo top-logo--primary">
+          <img id="brandLogo" class="brand-logo hidden" alt="" />
+          <div class="brand-text" id="elevName">—</div>
+        </div>
+        <div class="top-center">
+          <div class="top-center-inner">
+            <span id="clockDateLine" class="top-date-line">—</span>
+            <span class="top-meta-sep" aria-hidden="true">·</span>
+            <span id="clockTime" class="clock-time-line clock-time-line--hero">—:—</span>
+            <span class="top-meta-sep" aria-hidden="true">·</span>
+            <span id="weatherText" class="weather-line weather-inline" dir="ltr">—</span>
+          </div>
+        </div>
+        <div class="top-logo top-logo--secondary">
+          <div id="headerPhone" class="header-phone hidden" dir="ltr"></div>
+        </div>
+      </header>
+
+      <div class="main-split">
+        <section class="video-strip" aria-label="מדיה">
+          <div class="media-scale-inner" id="mediaScaleInner">
+            <img id="mediaImage" class="media-el hidden" alt="" />
+            <video id="mediaVideo" class="media-el hidden" playsinline muted autoplay></video>
+            <div id="mediaPlaceholder" class="media-placeholder">אין מדיה — העלה קובץ בניהול</div>
+          </div>
+        </section>
+
+        <section class="announcements-block" aria-label="הודעות ועדכונים">
+          <h2 class="ann-title">הודעות ועדכונים</h2>
+          <div class="ann-white-panel">
+            <div class="side-rss-marquee ann-marquee">
+              <div class="side-ticker" id="sideTicker" role="marquee"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="bottom-rss" dir="ltr">
+        <span class="rss-heading" id="rssHeading">מבזקי חדשות</span>
+        <div class="rss-marquee">
+          <div class="rss-track" id="rssTrack"></div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <div id="kioskOverlay" class="kiosk-overlay hidden" role="dialog">
+    <div class="kiosk-box">
+      <h2 class="kiosk-title">יציאה / הגדרות</h2>
+      <p class="hint">הזן את סיסמת היציאה מהממשק ניהול (ברירת מחדל 12345 כשאין תקשורת).</p>
+      <label for="kioskExitPassword">סיסמה</label>
+      <input id="kioskExitPassword" type="password" autocomplete="off" />
+      <div class="row" style="margin-top:0.75rem;">
+        <button type="button" id="btnKioskUnlock" class="btn-primary">אישור</button>
+        <button type="button" id="btnKioskOverlayCancel" class="ghost">ביטול</button>
+      </div>
+      <p id="kioskErr" class="hint" style="color:#e74c3c;margin-top:0.5rem;"></p>
+    </div>
+  </div>
+
+  <button type="button" id="fabSettings" class="fab" aria-label="הגדרות" title="הגדרות">⚙</button>
+
+  <div id="kioskMenu" class="kiosk-overlay hidden" role="dialog">
+    <div class="kiosk-box">
+      <h2 class="kiosk-title">בחר פעולה</h2>
+      <div class="row" style="flex-direction:column;align-items:stretch;">
+        <button type="button" id="btnKioskSettings">הגדרות נגן</button>
+        <button type="button" id="btnKioskQuit" class="ghost" style="border-color:#c0392b;color:#f5b4ad;">יציאה מהתוכנה</button>
+        <button type="button" id="btnKioskCancel" class="ghost">ביטול</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,421 @@
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+  background: #0a0e14;
+  color: #e8edf4;
+  overflow: hidden;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.settings-panel {
+  max-width: 480px;
+  margin: 3rem auto;
+  padding: 1.5rem;
+  background: #121a24;
+  border: 1px solid #243044;
+  border-radius: 12px;
+}
+.settings-panel h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+.settings-panel label {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #8b9bb4;
+}
+.settings-panel input,
+.settings-panel select {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #2a3544;
+  background: #0a0e14;
+  color: #e8edf4;
+  font: inherit;
+}
+
+/* סיבוב תצוגת המסך (מאונך) — המסך הפיזי לרוחב והתוכן לאורך, או להפך */
+html.player-orientation-portrait #display:not(.hidden) {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 100vh;
+  height: 100vw;
+  max-width: 100vh;
+  max-height: 100vw;
+  transform: translate(-50%, -50%) rotate(90deg);
+  transform-origin: center center;
+  z-index: 1;
+}
+.row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #2d7ff9;
+  color: #fff;
+  font-weight: 600;
+}
+button.ghost {
+  background: transparent;
+  border: 1px solid #2a3544;
+  color: #e8edf4;
+}
+.hint {
+  font-size: 0.85rem;
+  color: #8b9bb4;
+  margin: 0.5rem 0 0;
+}
+
+.display {
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr;
+  /* ברירות מחדל — מתעדכנות מ־renderer לפי config מהניהול */
+  --font-clock-time: 24px;
+  --font-clock-date: 14px;
+  --font-weather: 16px;
+  --font-brand: 20px;
+  --logo-max-h: 48px;
+  --font-side: 14px;
+  --font-rss: 15px;
+  --media-scale: 1;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: calc(0.6rem + env(safe-area-inset-top, 0px)) 1rem 0.6rem 1rem;
+  background: linear-gradient(180deg, #121a24, #0f1419);
+  border-bottom: 1px solid #243044;
+  flex-wrap: nowrap;
+  min-height: 0;
+}
+.brand-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+.brand-logo {
+  max-height: var(--logo-max-h);
+  max-width: min(42vw, 300px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.brand-text {
+  font-weight: 700;
+  font-size: var(--font-brand);
+  min-width: 0;
+}
+.clock-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+#clockTime {
+  font-size: var(--font-clock-time);
+  font-weight: 600;
+}
+#clockDate {
+  font-size: var(--font-clock-date);
+  color: #9aa8bc;
+}
+.weather-block {
+  flex: 1 1 0;
+  min-width: 0;
+  /* LTR + isolate: עברית + · + °C ב־RTL גורמים לסדר תווים שבור ול־ellipsis מעוות */
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: left;
+  font-size: var(--font-weather);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.main-area {
+  display: grid;
+  grid-template-columns: minmax(96px, min(22vw, 320px)) minmax(0, 1fr);
+  min-height: 0;
+  gap: 0;
+}
+
+.side-ticker-wrap {
+  border-left: 1px solid #243044;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* כותרת + גלילה אנכית אינסופית חלקה (כמו למטה: שני חצאי גובה זהים, מעבר ב־50% בלתי נראה) */
+.side-rss-column {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  background: #0d1218;
+}
+.side-rss-heading {
+  flex-shrink: 0;
+  padding: 0.35rem 0.3rem;
+  font-weight: 700;
+  font-size: var(--font-side);
+  color: #c8d4e6;
+  text-align: center;
+  border-bottom: 1px solid #243044;
+  white-space: nowrap;
+  direction: rtl;
+  unicode-bidi: isolate;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+/* חלון וירטואלי — רק כאן חיתוך; הגלילה על פנים פנימיים בלי padding שמקלקל −50% */
+.side-rss-marquee {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  padding: 0.65rem 0.45rem;
+  box-sizing: border-box;
+}
+#sideTicker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  font-size: var(--font-side);
+  line-height: 1.45;
+  color: #c5d0e0;
+  will-change: transform;
+  backface-visibility: hidden;
+  /* מדידה ב-JS: גובה מקטע אחד בפיקסלים — לולאה חלקה בלי קפיצה */
+  --side-loop-px: 0px;
+}
+.side-chunk {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.side-line {
+  text-align: center;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  padding: 0.4rem 0.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.side-line:last-child {
+  border-bottom: none;
+}
+@keyframes sideScrollSeamless {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, calc(-1 * var(--side-loop-px, 50%)), 0);
+  }
+}
+
+.media-wrap {
+  position: relative;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.media-scale-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(var(--media-scale));
+  transform-origin: center center;
+  will-change: transform;
+}
+.media-el {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.media-placeholder {
+  color: #5a6a82;
+  font-size: 1.1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.bottom-rss {
+  height: clamp(36px, 5vh, 52px);
+  background: #0d1218;
+  border-top: 1px solid #243044;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  direction: ltr;
+  text-align: left;
+}
+.rss-heading {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding-inline: 0.65rem 0.85rem;
+  font-weight: 700;
+  font-size: var(--font-rss);
+  color: #c8d4e6;
+  letter-spacing: 0.03em;
+  border-right: 1px solid #243044;
+  white-space: nowrap;
+  direction: rtl;
+  unicode-bidi: isolate;
+}
+.rss-marquee {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.rss-track {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  width: max-content;
+  font-size: var(--font-rss);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+.rss-inner {
+  display: inline-block;
+  padding-inline: 2rem;
+  white-space: nowrap;
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+/* גלילה משמאל לימין: התוכן נכנס מהצד השמאלי ונע ימינה (לופ חלק עם שכפול) */
+@keyframes rssScrollSeamlessLtr {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.fab {
+  position: fixed;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #2a3544;
+  background: #121a24;
+  color: #e8edf4;
+  opacity: 0.45;
+  z-index: 4000;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fab:hover {
+  opacity: 1;
+}
+
+.kiosk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.kiosk-overlay.hidden {
+  display: none !important;
+}
+.kiosk-box {
+  background: #121a24;
+  border: 1px solid #2a3544;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+.kiosk-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+.kiosk-box label {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #8b9bb4;
+}
+.kiosk-box input[type="password"] {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #2a3544;
+  background: #0a0e14;
+  color: #e8edf4;
+  font: inherit;
+}
+button.btn-primary {
+  background: #2d7ff9;
+  color: #fff;
+  border: none;
+}

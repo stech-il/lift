@@ -1,0 +1,3689 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f4f6fb" />
+  <title>ניהול מסכים — Pirsum</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --bg-mesh: radial-gradient(ellipse 1000px 520px at 100% -10%, rgba(99, 102, 241, 0.08), transparent 52%),
+        radial-gradient(ellipse 780px 420px at 0% 110%, rgba(14, 165, 233, 0.06), transparent 48%),
+        radial-gradient(ellipse 500px 300px at 50% 50%, rgba(99, 102, 241, 0.04), transparent 70%);
+      --surface: #ffffff;
+      --surface-input: #f8fafc;
+      --elevated: #ffffff;
+      --elevated-2: #eef2f7;
+      --text: #0f172a;
+      --muted: #64748b;
+      --muted-2: #94a3b8;
+      --accent: #4f46e5;
+      --accent-hover: #6366f1;
+      --accent-dim: rgba(79, 70, 229, 0.14);
+      --accent-glow: rgba(79, 70, 229, 0.12);
+      --border: rgba(15, 23, 42, 0.08);
+      --border-strong: rgba(15, 23, 42, 0.12);
+      --danger: #dc2626;
+      --danger-bg: rgba(220, 38, 38, 0.08);
+      --success: #059669;
+      --radius: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-card: 0 0 0 1px var(--border), 0 8px 24px rgba(15, 23, 42, 0.06), 0 2px 8px rgba(15, 23, 42, 0.04);
+      --shadow-float: 0 24px 48px rgba(15, 23, 42, 0.08);
+      --ring: 0 0 0 3px var(--accent-dim);
+      --sidebar-w: minmax(288px, 348px);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "IBM Plex Sans Hebrew", "Segoe UI", system-ui, sans-serif;
+      background: var(--bg-mesh), var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    ::selection {
+      background: rgba(99, 102, 241, 0.22);
+      color: var(--text);
+    }
+    button:focus-visible:not(:disabled),
+    .btn:focus-visible:not(:disabled),
+    a:focus-visible {
+      outline: 2px solid rgba(129, 140, 248, 0.75);
+      outline-offset: 2px;
+    }
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+      outline: none;
+    }
+    .sidebar,
+    .main,
+    .elevator-list,
+    .media-list,
+    .modal-box {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(15, 23, 42, 0.2) transparent;
+    }
+    .sidebar::-webkit-scrollbar,
+    .main::-webkit-scrollbar,
+    .elevator-list::-webkit-scrollbar,
+    .media-list::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .sidebar::-webkit-scrollbar-thumb,
+    .main::-webkit-scrollbar-thumb,
+    .elevator-list::-webkit-scrollbar-thumb,
+    .media-list::-webkit-scrollbar-thumb {
+      background: rgba(15, 23, 42, 0.15);
+      border-radius: 99px;
+    }
+    .sidebar::-webkit-scrollbar-thumb:hover,
+    .main::-webkit-scrollbar-thumb:hover {
+      background: rgba(15, 23, 42, 0.28);
+    }
+    .hidden { display: none !important; }
+    a { color: var(--accent-hover); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ——— Login ——— */
+    .auth-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .auth-stack {
+      width: 100%;
+      max-width: 420px;
+    }
+    .app-footer-credit {
+      margin: 0;
+      font-size: 0.72rem;
+      line-height: 1.5;
+      color: var(--muted-2);
+      text-align: center;
+    }
+    .auth-footer-outside {
+      margin-top: 1.1rem;
+      padding: 0 0.25rem;
+    }
+    .sidebar-footer-credit {
+      margin-top: auto;
+      padding-top: 0.9rem;
+      margin-bottom: 0;
+      border-top: 1px solid var(--border);
+      font-size: 0.7rem;
+      line-height: 1.5;
+      color: var(--muted-2);
+      text-align: center;
+    }
+    #loginPanel {
+      width: 100%;
+      max-width: 420px;
+      padding: 2.1rem 2rem 1.85rem;
+      background: linear-gradient(165deg, #ffffff 0%, var(--elevated-2) 100%);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card), var(--shadow-float);
+    }
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .auth-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #a855f7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+    }
+    .auth-brand h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .auth-brand p {
+      margin: 0.15rem 0 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    #loginPanel .field-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    /* ——— App shell ——— */
+    .shell {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      min-height: 100vh;
+    }
+    @media (max-width: 960px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        border-left: none;
+        border-bottom: 1px solid var(--border);
+        max-height: 48vh;
+      }
+    }
+
+    .sidebar {
+      border-left: 1px solid var(--border-strong);
+      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+      backdrop-filter: blur(16px) saturate(1.2);
+      -webkit-backdrop-filter: blur(16px) saturate(1.2);
+      padding: 1.35rem 1.1rem 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      min-height: 100vh;
+      box-shadow: inset 1px 0 0 rgba(15, 23, 42, 0.06);
+    }
+    .sidebar-brand {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding-bottom: 0.15rem;
+    }
+    .sidebar-brand .title-block h1 {
+      margin: 0;
+      font-size: 1.12rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+    }
+    .sidebar-brand .title-block span {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.28rem;
+      line-height: 1.4;
+    }
+    .sidebar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      justify-content: flex-end;
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+    .search-wrap input {
+      width: 100%;
+      padding: 0.6rem 0.8rem 0.6rem 2.1rem;
+      border-radius: 11px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-input);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.9rem;
+      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .search-wrap input::placeholder {
+      color: var(--muted-2);
+    }
+    .search-wrap input:focus {
+      outline: none;
+      border-color: rgba(99, 102, 241, 0.45);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    .search-icon {
+      position: absolute;
+      right: 0.65rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.95rem;
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .new-box {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+    .new-box input {
+      flex: 1;
+      border-radius: 11px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-input);
+      color: var(--text);
+      padding: 0.58rem 0.8rem;
+      font: inherit;
+      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .new-box input:focus {
+      outline: none;
+      border-color: rgba(99, 102, 241, 0.45);
+    }
+
+    .elevator-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      padding-left: 0.15rem;
+      margin: 0 -0.25rem;
+      padding-right: 0.25rem;
+    }
+    .elev-card {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.85rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      text-align: right;
+      transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, transform 0.15s;
+      box-shadow: inset 0 -1px 0 rgba(15, 23, 42, 0.05);
+    }
+    .elev-card:hover {
+      background: var(--elevated-2);
+      border-color: rgba(15, 23, 42, 0.12);
+      box-shadow: var(--shadow-sm);
+    }
+    .elev-card.active {
+      border-color: rgba(129, 140, 248, 0.55);
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.14), rgba(99, 102, 241, 0.06));
+      box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.28), 0 4px 20px rgba(99, 102, 241, 0.12);
+    }
+    .elev-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #e2e8f0, #cbd5e1);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+    .elev-thumb img,
+    .elev-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .elev-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .elev-name {
+      font-weight: 600;
+      font-size: 0.92rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .elev-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+      line-height: 1.35;
+    }
+
+    .main {
+      overflow-y: auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .main-inner {
+      flex: 1;
+      padding: 1.65rem clamp(1.1rem, 3.2vw, 2.75rem) 3.5rem;
+      max-width: 1120px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .empty-state {
+      flex: 1;
+      min-height: 50vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem;
+    }
+    .empty-state .empty-icon {
+      width: 76px;
+      height: 76px;
+      border-radius: 22px;
+      background: linear-gradient(145deg, rgba(99, 102, 241, 0.12), var(--elevated));
+      border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .empty-state strong {
+      display: block;
+      color: var(--text);
+      font-size: 1.05rem;
+      margin-bottom: 0.35rem;
+    }
+
+    /* Sticky editor header */
+    .cms-editor-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.15rem 0 1.35rem;
+      margin: -0.35rem 0 0.65rem;
+      background: linear-gradient(180deg, rgba(244, 246, 251, 0.98) 45%, rgba(244, 246, 251, 0.9) 75%, transparent 100%);
+      backdrop-filter: blur(12px) saturate(1.1);
+      -webkit-backdrop-filter: blur(12px) saturate(1.1);
+      border-bottom: 1px solid var(--border-strong);
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+    }
+    .cms-breadcrumb {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+    .cms-breadcrumb .sep {
+      opacity: 0.45;
+    }
+    .cms-page-title {
+      margin: 0;
+      font-size: clamp(1.28rem, 2.6vw, 1.55rem);
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.2;
+    }
+    .cms-header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .panel {
+      background: linear-gradient(165deg, #ffffff 0%, var(--elevated) 48%, #f8fafc 100%);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 1.35rem 1.45rem 1.4rem;
+      margin-bottom: 1.15rem;
+      box-shadow: var(--shadow-card);
+    }
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.85rem;
+      margin: -1.35rem -1.45rem 1.15rem;
+      padding: 1.05rem 1.45rem 0.95rem;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.04) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    .panel-head h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .panel-head h2::before {
+      content: "";
+      width: 3px;
+      height: 1.1em;
+      border-radius: 99px;
+      background: linear-gradient(180deg, var(--accent-hover), var(--accent));
+      flex-shrink: 0;
+      opacity: 0.95;
+    }
+    .panel-head .hint-inline {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 42ch;
+      text-align: right;
+    }
+
+    label,
+    .field-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border-radius: 11px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-input);
+      color: var(--text);
+      padding: 0.62rem 0.8rem;
+      font: inherit;
+      transition: border-color 0.18s, box-shadow 0.18s;
+      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: rgba(129, 140, 248, 0.55);
+      box-shadow: 0 0 0 3px var(--accent-dim), var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+    @media (max-width: 640px) {
+      .grid2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .media-stage {
+      position: relative;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-strong);
+      background: radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.1), transparent 55%), #e2e8f0;
+      aspect-ratio: 16 / 9;
+      max-height: 400px;
+      margin: 0 auto 0.75rem;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+    }
+    .media-stage video,
+    .media-stage img.preview-main {
+      max-width: 100%;
+      max-height: 100%;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .media-placeholder {
+      color: var(--muted);
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.92rem;
+    }
+    .media-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.65rem;
+    }
+    .media-upload-progress-wrap {
+      margin-top: 0.85rem;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .media-upload-progress-wrap.hidden {
+      display: none !important;
+    }
+    .media-upload-progress-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+    }
+    .media-upload-progress-pct {
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+    }
+    .media-upload-progress-track {
+      height: 10px;
+      border-radius: 999px;
+      background: var(--elevated-2);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .media-upload-progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent-hover), var(--accent));
+      transition: width 0.1s ease-out;
+    }
+    .file-input {
+      display: none;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.76rem;
+      font-weight: 500;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      background: rgba(5, 150, 105, 0.1);
+      color: #047857;
+      border: 1px solid rgba(52, 211, 153, 0.28);
+    }
+    .pill.warn {
+      background: rgba(251, 191, 36, 0.15);
+      color: #b45309;
+      border-color: rgba(251, 191, 36, 0.35);
+    }
+
+    .token-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+      flex-wrap: wrap;
+    }
+    .token-box {
+      flex: 1;
+      min-width: 200px;
+      font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+      font-size: 0.76rem;
+      line-height: 1.45;
+      word-break: break-all;
+      background: var(--surface-input);
+      padding: 0.68rem 0.8rem;
+      border-radius: 11px;
+      border: 1px solid var(--border-strong);
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+
+    .field-hint {
+      color: var(--muted-2);
+      font-size: 0.78rem;
+      margin: 0.35rem 0 0;
+      line-height: 1.4;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(140%);
+      background: linear-gradient(165deg, var(--elevated-2), var(--elevated));
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      padding: 0.75rem 1.35rem;
+      border-radius: 14px;
+      box-shadow: var(--shadow-card), var(--shadow-float);
+      opacity: 0;
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s;
+      z-index: 3000;
+      font-size: 0.9rem;
+      font-weight: 500;
+      max-width: min(90vw, 420px);
+      text-align: center;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+      z-index: 2500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.hidden {
+      display: none !important;
+    }
+    #idleLogoutModal.modal-overlay {
+      z-index: 3500;
+    }
+    .idle-countdown {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: ui-monospace, "Cascadia Code", monospace;
+    }
+    .modal-actions-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.65rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .modal-box {
+      background: linear-gradient(165deg, #ffffff 0%, var(--elevated-2) 100%);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-xl);
+      max-width: 480px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: auto;
+      padding: 1.6rem 1.55rem;
+      box-shadow: var(--shadow-card), var(--shadow-float);
+    }
+    .modal-box h2 {
+      margin: 0 0 0.35rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    .modal-lead {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin: 0 0 1.25rem;
+      line-height: 1.45;
+    }
+    .user-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .user-row:last-child {
+      border-bottom: none;
+    }
+
+    .media-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    .media-row {
+      display: grid;
+      grid-template-columns: 48px 1fr auto;
+      gap: 0.55rem;
+      align-items: center;
+      padding: 0.5rem 0.6rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      text-align: right;
+      transition: border-color 0.15s;
+    }
+    .media-row:hover {
+      border-color: var(--border-strong);
+    }
+    .media-row-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .media-row-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .media-row-meta {
+      min-width: 0;
+      font-size: 0.82rem;
+    }
+    .media-row-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .media-row-sub {
+      color: var(--muted);
+      font-size: 0.72rem;
+      margin-top: 0.15rem;
+    }
+    .media-row-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .media-row.media-row-readonly {
+      grid-template-columns: 48px 1fr;
+    }
+
+    .btn {
+      font: inherit;
+      cursor: pointer;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #9498ff 0%, var(--accent) 48%, #4f46e5 100%);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow: 0 2px 14px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    .btn-primary:hover {
+      filter: brightness(1.06);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+    .btn-ghost {
+      background: transparent;
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+    .btn-ghost:hover {
+      background: var(--surface);
+      border-color: var(--muted-2);
+    }
+    .btn-danger {
+      background: var(--danger-bg);
+      border-color: rgba(220, 38, 38, 0.25);
+      color: #b91c1c;
+    }
+    .btn-danger:hover {
+      background: rgba(220, 38, 38, 0.12);
+    }
+    .btn-danger.ghost {
+      background: transparent;
+      border-color: rgba(251, 113, 133, 0.4);
+      color: var(--danger);
+    }
+    .btn-sm {
+      padding: 0.35rem 0.65rem;
+      font-size: 0.82rem;
+    }
+
+    .stack-gap {
+      display: grid;
+      gap: 0.85rem;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1rem 0;
+    }
+
+    .user-edit-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.65rem;
+      text-align: right;
+    }
+    .user-edit-card .row-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: flex-end;
+      margin-bottom: 0.5rem;
+    }
+    .user-edit-card .row-top input[type="email"] {
+      flex: 1;
+      min-width: 160px;
+    }
+    .user-edit-card select {
+      min-width: 140px;
+      width: auto;
+      border-radius: 11px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-input);
+      color: var(--text);
+      padding: 0.48rem 0.6rem;
+      font: inherit;
+      font-size: 0.85rem;
+      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .user-edit-card .user-pass {
+      width: 100%;
+      margin-top: 0.35rem;
+      font-size: 0.88rem;
+    }
+    .user-edit-card .meta-line {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+    .user-scope-row {
+      margin-top: 0.5rem;
+    }
+    .user-scope-row .user-scope-select {
+      width: 100%;
+    }
+
+    /* ——— Sidebar navigation ——— */
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 0.5rem;
+    }
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+      text-align: right;
+      padding: 0.62rem 0.75rem;
+      border-radius: 11px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s, border-color 0.18s;
+    }
+    .sidebar-nav-item:hover {
+      background: rgba(15, 23, 42, 0.05);
+      color: var(--text);
+    }
+    .sidebar-nav-item.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(99, 102, 241, 0.06));
+      border-color: rgba(129, 140, 248, 0.35);
+      color: var(--text);
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+    }
+    .sidebar-nav-icon {
+      font-size: 0.85rem;
+      opacity: 0.85;
+      width: 1.25rem;
+      text-align: center;
+    }
+    .sidebar-section-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted-2);
+      margin: 0 0 0.45rem;
+      padding: 0 0.15rem;
+    }
+    #sidebarElevatorSection.hidden {
+      display: none !important;
+    }
+    #sidebarElevatorSection:not(.hidden) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    /* ——— Users management page ——— */
+    .users-page-header {
+      margin-bottom: 1rem;
+    }
+    .users-page-lead {
+      margin: 0.5rem 0 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 52ch;
+    }
+    .users-add-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem 1.25rem;
+      align-items: end;
+    }
+    .users-add-actions {
+      display: flex;
+      align-items: flex-end;
+      padding-bottom: 0.15rem;
+    }
+    .users-table-wrap {
+      overflow-x: auto;
+      margin: 0 -0.25rem;
+      padding: 0 0.25rem 0.25rem;
+    }
+    .users-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.88rem;
+    }
+    .users-table thead th {
+      text-align: right;
+      padding: 0.65rem 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border-strong);
+      background: #f1f5f9;
+      white-space: nowrap;
+    }
+    .users-table tbody tr {
+      transition: background 0.12s;
+    }
+    .users-table tbody tr:hover {
+      background: rgba(15, 23, 42, 0.04);
+    }
+    .users-table tbody td {
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .audit-table-wrap {
+      max-height: min(70vh, 720px);
+      overflow: auto;
+    }
+    .audit-table td.audit-detail-cell {
+      max-width: min(420px, 40vw);
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: var(--muted);
+      vertical-align: top;
+      word-break: break-word;
+      white-space: pre-wrap;
+      font-family: ui-monospace, "Cascadia Mono", monospace;
+    }
+    .audit-table td.audit-action-cell {
+      font-size: 0.82rem;
+      word-break: break-all;
+    }
+    .users-table tbody td input,
+    .users-table tbody td select {
+      font-size: 0.86rem;
+      padding: 0.45rem 0.55rem;
+      min-width: 0;
+    }
+    .users-table .user-email-inp {
+      min-width: 200px;
+      max-width: 280px;
+    }
+    .users-td-muted {
+      color: var(--muted);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+    .users-th-actions,
+    .users-td-actions {
+      text-align: center;
+      width: 1%;
+      white-space: nowrap;
+    }
+    .users-td-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      justify-content: center;
+      align-items: center;
+    }
+    .role-pill {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+    .role-pill.admin {
+      background: rgba(251, 191, 36, 0.2);
+      color: #92400e;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+    }
+    .role-pill.editor {
+      background: rgba(99, 102, 241, 0.12);
+      color: #4338ca;
+      border: 1px solid rgba(99, 102, 241, 0.28);
+    }
+    .role-pill.viewer {
+      background: rgba(52, 211, 153, 0.12);
+      color: #047857;
+      border: 1px solid rgba(52, 211, 153, 0.28);
+    }
+    .media-admin-filename {
+      word-break: break-all;
+      max-width: min(48ch, 100%);
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 0.84rem;
+    }
+    .media-admin-preview-cell {
+      width: 1%;
+      vertical-align: middle;
+      padding: 0.55rem 0.65rem !important;
+    }
+    .media-admin-preview-wrap {
+      width: 152px;
+      height: 92px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--elevated-2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .media-admin-preview-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .media-admin-preview-wrap video {
+      width: 100%;
+      height: 100%;
+      max-height: 92px;
+      object-fit: contain;
+      display: block;
+      vertical-align: middle;
+    }
+    .media-admin-preview-missing {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 0.35rem;
+      line-height: 1.35;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+      .toast {
+        transition-duration: 0.01ms;
+      }
+      .elev-card,
+      .btn {
+        transition-duration: 0.01ms;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast" role="status"></div>
+
+  <div id="idleLogoutModal" class="modal-overlay hidden" role="alertdialog" aria-modal="true" aria-labelledby="idleLogoutTitle" aria-describedby="idleLogoutLead">
+    <div class="modal-box">
+      <h2 id="idleLogoutTitle">אין פעילות</h2>
+      <p class="modal-lead" id="idleLogoutLead">
+        לא זוהתה פעילות במשך 5 דקות. המערכת תתנתק אוטומטית בעוד
+        <span id="idleLogoutCountdown" class="idle-countdown">5:00</span>.
+        לחץ על «המשך להישאר מחובר» כדי לבטל את הניתוק.
+      </p>
+      <div class="modal-actions-row">
+        <button type="button" class="btn btn-primary" id="btnIdleStay">המשך להישאר מחובר</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="authWrap" class="auth-wrap">
+    <div class="auth-stack">
+    <div id="loginPanel">
+      <div class="auth-brand">
+        <div class="auth-logo" aria-hidden="true">📺</div>
+        <div>
+          <h1>Pirsum</h1>
+          <p>ניהול תוכן למסכי מעליות</p>
+        </div>
+      </div>
+      <div id="loginBlock">
+        <p class="field-label" style="margin-bottom:1rem;color:var(--muted);font-weight:400;">התחברות לממשק הניהול</p>
+        <label class="field-label" for="loginEmail">אימייל</label>
+        <input id="loginEmail" type="email" dir="ltr" autocomplete="username" placeholder="admin@example.com" />
+        <label class="field-label" for="loginPassword" style="margin-top:0.85rem;">סיסמה</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••" />
+        <p style="margin:0.5rem 0 0;font-size:0.88rem;">
+          <button type="button" id="btnToggleForgot" class="btn btn-ghost btn-sm" style="padding:0.2rem 0.4rem;font-size:inherit;">שכחתי סיסמה</button>
+        </p>
+        <div id="forgotPasswordBlock" class="hidden" style="margin-top:0.85rem;padding:0.85rem;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface-input);">
+          <p class="field-hint" style="margin:0 0 0.5rem;">יישלח קישור לאיפוס לכתובת האימייל (דורש הגדרת SMTP בשרת).</p>
+          <label class="field-label" for="forgotEmail">אימייל</label>
+          <input id="forgotEmail" type="email" dir="ltr" autocomplete="off" placeholder="אותה כתובת כמו בהתחברות" />
+          <div style="margin-top:0.65rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary btn-sm" id="btnForgotSend">שלח קישור</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btnForgotCancel">סגור</button>
+          </div>
+        </div>
+        <div style="margin-top:1.1rem;">
+          <button type="button" class="btn btn-primary" id="btnLogin" style="width:100%;">התחבר</button>
+        </div>
+        <div id="googleSignInWrap" style="margin-top:0.85rem;display:none;justify-content:center;"></div>
+      </div>
+      <div id="resetPasswordBlock" class="hidden">
+        <p class="field-label" style="margin-bottom:1rem;color:var(--muted);font-weight:400;">איפוס סיסמה</p>
+        <input type="hidden" id="resetTokenField" value="" />
+        <label class="field-label" for="resetPassword1">סיסמה חדשה</label>
+        <input id="resetPassword1" type="password" autocomplete="new-password" />
+        <label class="field-label" for="resetPassword2" style="margin-top:0.85rem;">אימות סיסמה</label>
+        <input id="resetPassword2" type="password" autocomplete="new-password" />
+        <div style="margin-top:1.1rem;">
+          <button type="button" class="btn btn-primary" id="btnResetPassword" style="width:100%;">עדכן סיסמה והתחבר</button>
+        </div>
+      </div>
+      <div id="setupBlock" class="hidden">
+        <p class="field-label" style="margin-bottom:1rem;color:var(--muted);font-weight:400;">אין עדיין משתמשים — צור מנהל ראשון</p>
+        <label class="field-label" for="setupEmail">אימייל</label>
+        <input id="setupEmail" type="email" dir="ltr" autocomplete="off" placeholder="admin@example.com" />
+        <label class="field-label" for="setupPassword" style="margin-top:0.85rem;">סיסמה (לפחות 8 תווים)</label>
+        <input id="setupPassword" type="password" autocomplete="new-password" />
+        <label class="field-label" for="setupPassword2" style="margin-top:0.85rem;">אימות סיסמה</label>
+        <input id="setupPassword2" type="password" autocomplete="new-password" />
+        <div style="margin-top:1.1rem;">
+          <button type="button" class="btn btn-primary" id="btnSetup" style="width:100%;">צור מנהל והתחבר</button>
+        </div>
+      </div>
+      <p id="loginErr" style="color:var(--danger);margin-top:1rem;font-size:0.88rem;"></p>
+    </div>
+    <p class="app-footer-credit auth-footer-outside" role="contentinfo">נבנה ופותח ע״י שי טכנולוגיות · 2026 · ניהול</p>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="title-block">
+            <h1>Pirsum</h1>
+            <span id="sidebarSubtitle">לוח בקרה</span>
+          </div>
+          <div class="sidebar-actions">
+            <button type="button" class="btn btn-ghost btn-sm" id="btnLogout" title="יציאה">יציאה</button>
+          </div>
+        </div>
+        <nav class="sidebar-nav" id="sidebarNav" aria-label="מערכת ראשית">
+          <button type="button" class="sidebar-nav-item active" id="navElevators" data-view="elevators">
+            <span class="sidebar-nav-icon" aria-hidden="true">◆</span>
+            <span class="sidebar-nav-text">מתקנים</span>
+          </button>
+          <button type="button" class="sidebar-nav-item hidden" id="navUsers" data-view="users">
+            <span class="sidebar-nav-icon" aria-hidden="true">◎</span>
+            <span class="sidebar-nav-text">משתמשים</span>
+          </button>
+          <button type="button" class="sidebar-nav-item hidden" id="navAllMedia" data-view="media">
+            <span class="sidebar-nav-icon" aria-hidden="true">▣</span>
+            <span class="sidebar-nav-text">מדיה (כל המתקנים)</span>
+          </button>
+          <button type="button" class="sidebar-nav-item hidden" id="navAudit" data-view="audit">
+            <span class="sidebar-nav-icon" aria-hidden="true">◐</span>
+            <span class="sidebar-nav-text">לוג פעולות</span>
+          </button>
+          <button type="button" class="sidebar-nav-item hidden" id="navSettings" data-view="settings">
+            <span class="sidebar-nav-icon" aria-hidden="true">⚙</span>
+            <span class="sidebar-nav-text">הגדרות</span>
+          </button>
+        </nav>
+        <div id="sidebarElevatorSection">
+          <p class="sidebar-section-label" id="elevNavLabel">מסכים ותוכן</p>
+          <div class="search-wrap">
+            <input type="search" id="sidebarSearch" placeholder="חיפוש מתקן…" autocomplete="off" />
+            <span class="search-icon" aria-hidden="true">⌕</span>
+          </div>
+          <div class="new-box" id="rowNewElev">
+            <input id="newName" placeholder="מתקן חדש…" />
+            <button type="button" class="btn btn-primary" id="btnCreate" title="הוסף">+</button>
+          </div>
+          <div id="elevatorList" class="elevator-list"></div>
+        </div>
+        <p class="sidebar-footer-credit app-footer-credit" role="contentinfo">נבנה ופותח ע״י שי טכנולוגיות · 2026 · ניהול</p>
+      </aside>
+
+      <main class="main">
+        <div class="main-inner">
+          <div id="viewElevators">
+          <div id="emptyMain" class="empty-state">
+            <div class="empty-icon" aria-hidden="true">🛗</div>
+            <strong>בחר מתקן מהרשימה</strong>
+            <span>בחר מתקן לעריכת פלייליסט, טקסטים והגדרות מסך.</span>
+          </div>
+
+          <div id="detailWrap" class="hidden">
+            <header class="cms-editor-header">
+              <div>
+                <nav class="cms-breadcrumb" aria-label="מיקום">
+                  <span>מסכים</span>
+                  <span class="sep">/</span>
+                  <span id="breadcrumbCurrent">עריכה</span>
+                </nav>
+                <h1 class="cms-page-title" id="detailTitle">מתקן</h1>
+              </div>
+              <div class="cms-header-actions">
+                <button type="button" class="btn btn-danger ghost" id="btnDeleteElev">מחק מתקן</button>
+                <button type="button" class="btn btn-primary" id="btnSave">שמור שינויים</button>
+              </div>
+            </header>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>חיבור לנגן</h2>
+                <span class="hint-inline">הדבק בנגן במחשב המעלית</span>
+              </div>
+              <div class="token-row">
+                <div class="token-box" id="detailToken"></div>
+                <button type="button" class="btn btn-ghost btn-sm" id="btnCopyToken">העתק</button>
+              </div>
+              <div style="margin-top:0.85rem;">
+                <label for="playerBaseUrlHint" style="display:block;font-size:0.82rem;color:var(--muted-2);margin-bottom:0.35rem;">כתובת שרת לנגן (הדבקה ליד הטוקן)</label>
+                <div class="token-row" style="align-items:center;">
+                  <input
+                    type="url"
+                    id="playerBaseUrlHint"
+                    dir="ltr"
+                    autocomplete="off"
+                    placeholder="https://lift.s-tech.co.il"
+                    style="flex:1;min-width:180px;font:inherit;padding:0.55rem 0.7rem;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface-input);color:var(--text);"
+                  />
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnPlayerUrlDefault" title="החזר לכתובת ברירת המחדל">ברירת מחדל</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnPlayerUrlClear" title="מחק את הכתובת מהשדה">נקה</button>
+                </div>
+                <p class="field-hint" style="margin-top:0.4rem;">
+                  ברירת מחדל: <code dir="ltr" style="font-size:0.85em;">https://lift.s-tech.co.il</code> — ניתן לערוך, לנקות או להחזיר. נשמר במחשב זה בלבד (מקומי).
+                </p>
+              </div>
+              <div id="clientDownloadsWrap" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+                <p style="font-size:0.82rem;color:var(--muted-2);margin:0 0 0.5rem;">התקנת נגן V2 למחשב (קבצים מהשרת)</p>
+                <div id="clientDownloadsAdminBar" class="hidden" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin-bottom:0.65rem;">
+                  <input type="file" id="fClientDownload" class="file-input" accept=".exe,.msi,.zip,.apk,application/vnd.android.package-archive,application/x-msdownload,application/zip" />
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnPickClientDownload">בחר קובץ</button>
+                  <span id="clientDownloadLabel" class="field-hint" style="flex:1;min-width:140px;margin:0;"></span>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnUploadClientDownload" disabled>העלה לשרת</button>
+                </div>
+                <div id="clientDownloadsList" style="display:flex;flex-direction:column;gap:0.65rem;"></div>
+                <p id="clientDownloadsEmpty" class="field-hint" style="margin-top:0.35rem;display:none;"></p>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>מדיה ופלייליסט</h2>
+                <span class="hint-inline">תמונות ווידאו — סדר ההצגה במסך</span>
+              </div>
+              <div class="media-stage" id="mediaStage">
+                <div class="media-placeholder" id="previewPlaceholder">אין קבצי מדיה</div>
+                <video id="previewVideo" class="preview-main hidden" playsinline muted loop controls></video>
+                <img id="previewImage" class="preview-main hidden" alt="תצוגה מקדימה" />
+              </div>
+              <div style="text-align:center;margin-bottom:0.5rem;">
+                <span id="mediaPill" class="pill warn hidden">ללא מדיה</span>
+              </div>
+              <div id="mediaList" class="media-list"></div>
+              <div class="media-toolbar">
+                <input type="file" id="fFile" class="file-input" multiple accept="image/*,video/*" />
+                <button type="button" class="btn btn-primary" id="btnPickFile">בחר קבצים</button>
+                <button type="button" class="btn btn-primary" id="btnUploadMedia" disabled>העלה לפלייליסט</button>
+                <button type="button" class="btn btn-danger ghost" id="btnDeleteAllMedia" disabled>מחק הכל</button>
+              </div>
+              <div id="mediaUploadProgressWrap" class="media-upload-progress-wrap hidden" aria-live="polite" aria-atomic="true">
+                <div class="media-upload-progress-label">
+                  <span id="mediaUploadProgressTitle">העלאה לשרת</span>
+                  <span id="mediaUploadProgressPct" class="media-upload-progress-pct">0%</span>
+                </div>
+                <div class="media-upload-progress-track">
+                  <div id="mediaUploadProgressFill" class="media-upload-progress-fill"></div>
+                </div>
+              </div>
+              <p class="field-hint" style="text-align:center;margin-bottom:0;">
+                ניתן לבחור כמה קבצים בבת אחת. הנגן מתעדכן מיד (WebSocket).
+              </p>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>תוכן ומקורות</h2>
+                <span class="hint-inline">כותרות צד/תחתון, RSS או ידני, מהירויות גלילה</span>
+              </div>
+              <div class="stack-gap">
+                <div>
+                  <label for="fName">שם תצוגה (במסך)</label>
+                  <input id="fName" />
+                </div>
+                <div>
+                  <label for="fHeaderPhone">טלפון בפס העליון (נגן V2 — צד שמאל במסך)</label>
+                  <input id="fHeaderPhone" dir="ltr" placeholder="054-0000000" autocomplete="off" />
+                </div>
+                <div id="logoRow">
+                  <label>לוגו בשורת הכותרת (מימין)</label>
+                  <p class="field-hint" style="margin:0 0 0.5rem;">
+                    כשמוגדר לוגו הוא מוצג במקום שם התצוגה בפינה הימנית. עד 2MB — PNG, JPG, WebP, GIF, SVG.
+                  </p>
+                  <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;min-height:52px;">
+                    <img id="logoPreview" alt="" style="display:none;max-height:52px;max-width:220px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#f1f5f9;padding:0.25rem;" />
+                    <span id="logoPreviewEmpty" style="color:var(--muted);font-size:0.88rem;">לא הוגדר לוגו</span>
+                  </div>
+                  <input type="file" id="fLogoFile" class="file-input" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg" />
+                  <div class="media-toolbar" style="justify-content:flex-start;margin-top:0.5rem;">
+                    <button type="button" class="btn btn-primary btn-sm" id="btnPickLogo">בחר קובץ</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="btnUploadLogo" disabled>העלה לוגו</button>
+                    <button type="button" class="btn btn-danger ghost btn-sm" id="btnDeleteLogo">הסר לוגו</button>
+                  </div>
+                </div>
+                <div id="backgroundRow">
+                  <label>רקע מסך מלא (נגן V2)</label>
+                  <p class="field-hint" style="margin:0 0 0.5rem;">
+                    תמונה לרקע כל המסך בנגן הפריסה החדשה (תיקיית player-v2). עד 12MB — PNG, JPG, WebP, GIF.
+                  </p>
+                  <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;min-height:72px;">
+                    <img id="bgPreview" alt="" style="display:none;max-height:72px;max-width:280px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#f1f5f9;padding:0.25rem;" />
+                    <span id="bgPreviewEmpty" style="color:var(--muted);font-size:0.88rem;">לא הוגדר רקע</span>
+                  </div>
+                  <input type="file" id="fBgFile" class="file-input" accept="image/png,image/jpeg,image/webp,image/gif,.jpg,.png,.webp,.gif" />
+                  <div class="media-toolbar" style="justify-content:flex-start;margin-top:0.5rem;">
+                    <button type="button" class="btn btn-primary btn-sm" id="btnPickBg">בחר קובץ</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="btnUploadBg" disabled>העלה רקע</button>
+                    <button type="button" class="btn btn-danger ghost btn-sm" id="btnDeleteBg">הסר רקע</button>
+                  </div>
+                </div>
+                <div>
+                  <label for="fSide">עדכונים (צד) — כותרות מהניהול</label>
+                  <p class="field-hint" style="margin:0 0 0.4rem;">
+                    שורה לכל כותרת. בעמודה הצדדית הטקסט נגלל אנכית בלופ אינסופי חלק (כמו פס ה-RSS למטה — ללא קפיצה באמצע המחזור).
+                  </p>
+                  <textarea id="fSide" placeholder="כותרת ראשונה&#10;כותרת שנייה..."></textarea>
+                </div>
+                <div>
+                  <label for="fRssText">חדשות תחתונות (פס RSS) — כותרות מהניהול</label>
+                  <p class="field-hint" style="margin:0 0 0.4rem;">
+                    שורה לכל כותרת. אם השדה מלא — יוצגו הכותרות האלה בלבד (ללא משיכה מ־RSS). השאר ריק כדי למשוך כותרות מכתובת ה־RSS למטה.
+                  </p>
+                  <textarea id="fRssText" placeholder="כותרת לפס התחתון — שורה לכל פריט..."></textarea>
+                </div>
+                <div>
+                  <label for="fRss">כתובת RSS (כשאין כותרות ידניות לפס התחתון)</label>
+                  <input id="fRss" dir="ltr" placeholder="https://..." />
+                </div>
+                <div class="grid2">
+                  <div>
+                    <label for="fRssDur">מהירות פס חדשות (RSS) — שניות לסיבוב (גבוה = איטי יותר)</label>
+                    <input id="fRssDur" type="number" min="15" max="600" step="1" />
+                  </div>
+                  <div>
+                    <label for="fSideDur">מהירות טקסט צד — שניות לסיבוב (גבוה = איטי יותר)</label>
+                    <input id="fSideDur" type="number" min="20" max="900" step="1" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>גודל במסך (נגן)</h2>
+                <span class="hint-inline">שליטה בגודל טקסטים, לוגו ופירסומות — לכל מתקן בנפרד</span>
+              </div>
+              <p class="field-hint" style="margin:0 0 0.75rem;">
+                ערכי px לטקסטים; פירסומות — אחוז מהגודל (100% = ברירת מחדל). השינוי נטען בנגן עם הסנכרון.
+              </p>
+              <div class="grid2">
+                <div>
+                  <label for="fFontClockTime">שעה (px)</label>
+                  <input id="fFontClockTime" type="number" min="14" max="72" step="1" />
+                </div>
+                <div>
+                  <label for="fFontClockDate">תאריך (px)</label>
+                  <input id="fFontClockDate" type="number" min="10" max="42" step="1" />
+                </div>
+                <div>
+                  <label for="fFontWeather">מזג אוויר / עיר (px)</label>
+                  <input id="fFontWeather" type="number" min="10" max="42" step="1" />
+                </div>
+                <div>
+                  <label for="fFontBrand">שם תצוגה — טקסט כשאין לוגו (px)</label>
+                  <input id="fFontBrand" type="number" min="12" max="56" step="1" />
+                </div>
+                <div>
+                  <label for="fLogoMaxH">גובה לוגו מקסימלי (px)</label>
+                  <input id="fLogoMaxH" type="number" min="24" max="120" step="1" />
+                </div>
+                <div>
+                  <label for="fFontSide">עדכונים (צד) — גלילה (px)</label>
+                  <input id="fFontSide" type="number" min="8" max="36" step="1" />
+                </div>
+                <div>
+                  <label for="fFontRss">חדשות תחתונות — פס RSS (px)</label>
+                  <input id="fFontRss" type="number" min="8" max="36" step="1" />
+                </div>
+                <div>
+                  <label for="fMediaScale">פירסומות — גודל יחסי (%)</label>
+                  <input id="fMediaScale" type="number" min="50" max="150" step="1" />
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>מיקום ומזג אוויר</h2>
+              </div>
+              <div style="margin-bottom:0.85rem;">
+                <label for="cityPresetSelect">עיר בישראל (מילוי אוטומטי)</label>
+                <select id="cityPresetSelect" autocomplete="address-level2"></select>
+                <p class="field-hint" style="margin-top:0.4rem;margin-bottom:0;">
+                  בחירת עיר מהרשימה ממלאת קו רוחב, קו אורך ותווית העיר. לחץ «שמור שינויים» כדי לעדכן את הנגן במסך (סנכרון מיידי).
+                </p>
+              </div>
+              <div class="grid2">
+                <div>
+                  <label for="fLat">קו רוחב</label>
+                  <input id="fLat" dir="ltr" type="number" step="any" />
+                </div>
+                <div>
+                  <label for="fLon">קו אורך</label>
+                  <input id="fLon" dir="ltr" type="number" step="any" />
+                </div>
+              </div>
+              <div style="margin-top:0.85rem;">
+                <label for="fCity">תווית עיר (במסך)</label>
+                <input id="fCity" placeholder="תל אביב" />
+              </div>
+              <div id="weatherPreviewPanel" style="margin-top:1rem;padding:0.85rem 1rem;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface-input);">
+                <p class="field-label" style="margin:0 0 0.35rem;">מזג אוויר — תצוגה מקדימה</p>
+                <p class="field-hint" style="margin:0 0 0.5rem;">Open-Meteo לפי השדות למעלה (בלי שמירה).</p>
+                <div id="weatherPreviewResult" dir="ltr" style="font-weight:600;margin-bottom:0.35rem;min-height:1.35em;">—</div>
+                <p id="weatherPreviewDiag" class="field-hint" style="margin:0 0 0.5rem;display:none;word-break:break-word;" dir="ltr"></p>
+                <button type="button" class="btn btn-ghost btn-sm" id="btnWeatherPreview">רענן</button>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>אבטחת נגן</h2>
+                <span class="hint-inline">יציאה ממסך מלא — F8</span>
+              </div>
+              <div>
+                <label for="fExitPassword">סיסמת יציאה לנגן</label>
+                <input id="fExitPassword" type="text" dir="ltr" placeholder="12345" autocomplete="off" />
+                <p class="field-hint">נשמר בשרת; הנגן שומר עותק מקומי. ללא אינטרנט ברירת מחדל 12345.</p>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          <div id="viewUsers" class="hidden">
+            <header class="cms-editor-header users-page-header">
+              <div>
+                <nav class="cms-breadcrumb" aria-label="מיקום">
+                  <span>ניהול</span>
+                  <span class="sep">/</span>
+                  <span>משתמשים והרשאות</span>
+                </nav>
+                <h1 class="cms-page-title">משתמשים</h1>
+                <p class="users-page-lead">ניהול חשבונות, תפקידים וגישה למסכים. עורך/צופה ניתן להגביל למתקן אחד.</p>
+              </div>
+            </header>
+
+            <div class="panel users-add-panel">
+              <div class="panel-head">
+                <h2>הוספת משתמש</h2>
+                <span class="hint-inline">מילוי פרטים ושמירה — נשלח לשרת מוצפן. אם הוגדר SMTP בשרת, נשלח גם מייל קבלת חשבון לכתובת החדשה.</span>
+              </div>
+              <div class="users-add-grid">
+                <div>
+                  <label class="field-label" for="newUserEmail">אימייל</label>
+                  <input id="newUserEmail" type="email" dir="ltr" placeholder="user@example.com" autocomplete="off" />
+                </div>
+                <div>
+                  <label class="field-label" for="newUserRole">תפקיד</label>
+                  <select id="newUserRole">
+                    <option value="editor">עורך תוכן</option>
+                    <option value="viewer">צופה</option>
+                    <option value="admin">מנהל מערכת</option>
+                  </select>
+                </div>
+                <div id="newUserScopeWrap">
+                  <label class="field-label" for="newUserElevatorScope">מסך מותר</label>
+                  <select id="newUserElevatorScope"></select>
+                  <p class="field-hint" style="margin:0.35rem 0 0;">ריק = כל המסכים · רלוונטי לעורך וצופה</p>
+                </div>
+                <div>
+                  <label class="field-label" for="newUserPassword">סיסמה ראשונית</label>
+                  <input id="newUserPassword" type="password" placeholder="לפחות 8 תווים" autocomplete="new-password" />
+                </div>
+                <div class="users-add-actions">
+                  <button type="button" class="btn btn-primary" id="btnAddUser">הוסף משתמש</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel users-list-panel">
+              <div class="panel-head">
+                <h2>רשימת משתמשים</h2>
+                <span class="hint-inline"><span id="usersCountPill" class="pill">0 משתמשים</span></span>
+              </div>
+              <div class="users-table-wrap">
+                <table class="users-table" id="usersTable">
+                  <thead>
+                    <tr>
+                      <th>אימייל</th>
+                      <th>תפקיד</th>
+                      <th>גישה למסך</th>
+                      <th>סיסמה חדשה</th>
+                      <th>נוצר</th>
+                      <th class="users-th-actions">פעולות</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="viewMediaAdmin" class="hidden">
+            <header class="cms-editor-header users-page-header">
+              <div>
+                <nav class="cms-breadcrumb" aria-label="מיקום">
+                  <span>ניהול</span>
+                  <span class="sep">/</span>
+                  <span>מדיה גלובלית</span>
+                </nav>
+                <h1 class="cms-page-title">כל קבצי המדיה</h1>
+                <p class="users-page-lead">
+                  רשימה של כל קבצי הווידאו והתמונה בכל המתקנים. מחיקה כאן מסירה את הקובץ לצמיתות מהשרת ומעדכנת את המסכים.
+                  עורכים ממשיכים למחוק ולהעלות מתוך מסך המתקן הרגיל — זהו מסך ניהול למנהל בלבד.
+                </p>
+              </div>
+            </header>
+            <div class="panel users-list-panel">
+              <div class="panel-head">
+                <h2>קבצים</h2>
+                <span class="hint-inline"><span id="mediaAdminCountPill" class="pill">0 קבצים</span></span>
+              </div>
+              <div class="users-table-wrap">
+                <table class="users-table" id="mediaAdminTable">
+                  <thead>
+                    <tr>
+                      <th>מתקן</th>
+                      <th>תצוגה מקדימה</th>
+                      <th>שם קובץ</th>
+                      <th>סוג</th>
+                      <th class="users-th-actions">פעולות</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mediaAdminTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="viewAudit" class="hidden">
+            <header class="cms-editor-header users-page-header">
+              <div>
+                <nav class="cms-breadcrumb" aria-label="מיקום">
+                  <span>ניהול</span>
+                  <span class="sep">/</span>
+                  <span>לוג פעולות</span>
+                </nav>
+                <h1 class="cms-page-title">לוג פעולות</h1>
+                <p class="users-page-lead">
+                  רישום פעולות (שמירה מוצלחת) — עמודות «פעולה» ו«פרטים» מוצגות בעברית. רשומות ישנות לפני העדכון עשויות להופיע בפורמט טכני.
+                </p>
+              </div>
+            </header>
+            <div class="panel">
+              <div class="panel-head">
+                <h2>אירועים אחרונים</h2>
+                <span class="hint-inline"><span id="auditCountPill" class="pill">0</span></span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin-bottom:0.85rem;">
+                <button type="button" class="btn btn-ghost btn-sm" id="btnAuditPrev">עמוד קודם</button>
+                <span id="auditPageInfo" class="field-hint" style="margin:0;"></span>
+                <button type="button" class="btn btn-ghost btn-sm" id="btnAuditNext">עמוד הבא</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnAuditEmail">שלח לוג במייל</button>
+                <span id="auditMailHint" class="field-hint" style="margin:0;">נדרש SMTP בשרת · יישלח למנהל המחובר</span>
+              </div>
+              <div class="users-table-wrap audit-table-wrap">
+                <table class="users-table audit-table" id="auditTable">
+                  <thead>
+                    <tr>
+                      <th>זמן</th>
+                      <th>משתמש</th>
+                      <th>פעולה</th>
+                      <th>IP</th>
+                      <th>פרטים</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="viewSettings" class="hidden">
+            <header class="cms-editor-header users-page-header">
+              <div>
+                <nav class="cms-breadcrumb" aria-label="מיקום">
+                  <span>ניהול</span>
+                  <span class="sep">/</span>
+                  <span>הגדרות מערכת</span>
+                </nav>
+                <h1 class="cms-page-title">הגדרות</h1>
+                <p class="users-page-lead">
+                  הגדרות גלובליות נשמרות בבסיס הנתונים של השרת (ממוסכמות על משתני סביבה אם לא הוגדרו כאן).
+                  מסך זה מוצג למנהל מערכת בלבד.
+                </p>
+              </div>
+            </header>
+            <div class="panel">
+              <div class="panel-head">
+                <h2>שליחת אימייל (SMTP)</h2>
+                <span class="hint-inline">איפוס סיסמה, איפוס מייל · בדיקה</span>
+              </div>
+              <div class="stack-gap" style="max-width:32rem;">
+                <div>
+                  <label class="field-label" for="setSmtpHost">שרת SMTP (host)</label>
+                  <input id="setSmtpHost" type="text" dir="ltr" autocomplete="off" placeholder="smtp.example.com" />
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+                  <div style="flex:1;min-width:7rem;">
+                    <label class="field-label" for="setSmtpPort">פורט</label>
+                    <input id="setSmtpPort" type="number" min="1" max="65535" dir="ltr" />
+                  </div>
+                  <label class="field-label" style="display:flex;align-items:center;gap:0.45rem;margin-bottom:0.35rem;cursor:pointer;">
+                    <input type="checkbox" id="setSmtpSecure" />
+                    SSL/TLS ישיר (secure)
+                  </label>
+                </div>
+                <div>
+                  <label class="field-label" for="setSmtpUser">משתמש SMTP (אופציונלי)</label>
+                  <input id="setSmtpUser" type="text" dir="ltr" autocomplete="off" />
+                </div>
+                <div>
+                  <label class="field-label" for="setSmtpPass">סיסמת SMTP</label>
+                  <input id="setSmtpPass" type="password" dir="ltr" autocomplete="new-password" placeholder="השאר ריק כדי לא לשנות" />
+                  <p id="setSmtpPassHint" class="field-hint" style="margin:0.35rem 0 0;"></p>
+                </div>
+                <div>
+                  <label class="field-label" for="setMailFrom">כתובת שולח (From)</label>
+                  <input id="setMailFrom" type="email" dir="ltr" autocomplete="off" placeholder="noreply@example.com" />
+                </div>
+                <label class="field-label" style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;">
+                  <input type="checkbox" id="setSmtpPassClear" />
+                  מחק סיסמת SMTP שמורה (התחברות ללא סיסמה אם השרת מאפשר)
+                </label>
+                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
+                  <button type="button" class="btn btn-primary" id="btnSettingsSave">שמור הגדרות</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnSettingsMailTest">שלח מייל בדיקה</button>
+                </div>
+                <p class="field-hint" style="margin:0;">מייל בדיקה יישלח לכתובת המשתמש המחובר. דורש host ו־From תקינים.</p>
+                <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">
+                  <p class="field-hint" style="margin:0 0 0.5rem;">למחוק את כל הערכים השמורים בבסיס הנתונים ולחזור להגדרה ממשתני סביבה בלבד:</p>
+                  <button type="button" class="btn btn-danger ghost btn-sm" id="btnSettingsResetDb">אפס הגדרות DB (מייל)</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "pirsum_access_token";
+    const STORAGE_ROLE_KEY = "pirsum_user_role";
+    const STORAGE_SCOPE_KEY = "pirsum_allowed_elevator";
+    const IDLE_MS = 5 * 60 * 1000;
+    const IDLE_GRACE_SEC = 5 * 60;
+    let idleWatchTimer = null;
+    let idleGraceInterval = null;
+    let accessToken = localStorage.getItem(STORAGE_KEY) || "";
+    let selectedId = null;
+    let elevators = [];
+    let currentView = "elevators";
+    let auditOffset = 0;
+    const AUDIT_PAGE_SIZE = 100;
+    let authPublicConfig = { googleClientId: "", mailConfigured: false };
+    let weatherPreviewTimer = null;
+
+    async function loadAuthPublicConfig() {
+      try {
+        authPublicConfig = await fetchJsonNoAuth("/api/auth/public-config");
+      } catch {
+        authPublicConfig = { googleClientId: "", mailConfigured: false };
+      }
+      const hint = document.querySelector("#forgotPasswordBlock .field-hint");
+      if (hint) {
+        hint.textContent = authPublicConfig.mailConfigured
+          ? "יישלח קישור לאיפוס לכתובת האימייל (דורש הגדרת SMTP בשרת — כבר מוגדר)."
+          : "בשרת לא הוגדר SMTP — הגדר SMTP_HOST, MAIL_FROM (ואופציונלית SMTP_USER/SMTP_PASS) כדי לאפשר איפוס סיסמה במייל.";
+      }
+    }
+
+    function initGoogleSignIn() {
+      const wrap = document.getElementById("googleSignInWrap");
+      if (!wrap || !authPublicConfig.googleClientId) return;
+      wrap.style.display = "flex";
+      if (window.google && google.accounts && google.accounts.id) {
+        renderGoogleSignInButton();
+        return;
+      }
+      const existing = document.getElementById("gsiScript");
+      if (existing) return;
+      const s = document.createElement("script");
+      s.id = "gsiScript";
+      s.src = "https://accounts.google.com/gsi/client";
+      s.async = true;
+      s.defer = true;
+      s.onload = () => renderGoogleSignInButton();
+      document.head.appendChild(s);
+    }
+
+    function renderGoogleSignInButton() {
+      const wrap = document.getElementById("googleSignInWrap");
+      const cid = authPublicConfig.googleClientId;
+      if (!wrap || !cid || !window.google || !google.accounts || !google.accounts.id) return;
+      wrap.innerHTML = "";
+      google.accounts.id.initialize({
+        client_id: cid,
+        callback: onGoogleCredential,
+        ux_mode: "popup",
+      });
+      google.accounts.id.renderButton(wrap, {
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        shape: "rectangular",
+        locale: "he",
+        width: 320,
+      });
+    }
+
+    async function onGoogleCredential(resp) {
+      const err = document.getElementById("loginErr");
+      err.textContent = "";
+      try {
+        const data = await fetchJsonNoAuth("/api/auth/google", {
+          method: "POST",
+          body: JSON.stringify({ credential: resp.credential }),
+        });
+        saveSession(data);
+        showApp();
+        try {
+          await loadMe();
+        } catch (_) {}
+        await loadElevators();
+        applyRoleUi();
+        restoreNavViewAfterAuth();
+        toast("התחברות עם Google");
+      } catch (e) {
+        err.textContent = e.message || "התחברות נכשלה";
+      }
+    }
+
+    async function refreshWeatherPreview() {
+      const outEl = document.getElementById("weatherPreviewResult");
+      const diagEl = document.getElementById("weatherPreviewDiag");
+      if (!outEl || !accessToken) return;
+      outEl.textContent = "טוען…";
+      if (diagEl) {
+        diagEl.textContent = "";
+        diagEl.style.display = "none";
+      }
+      try {
+        const body = {
+          latitude: parseFloat(document.getElementById("fLat")?.value) || 32.0853,
+          longitude: parseFloat(document.getElementById("fLon")?.value) || 34.7818,
+          city_label: document.getElementById("fCity")?.value?.trim() || "",
+        };
+        const data = await api("/api/admin/weather-preview", { method: "POST", body: JSON.stringify(body) });
+        if (data.temp != null && String(data.temp).trim() !== "") {
+          const city = data.city ? data.city + " · " : "";
+          outEl.textContent = city + data.temp + " (" + (data.lat?.toFixed?.(4) ?? data.lat) + ", " + (data.lon?.toFixed?.(4) ?? data.lon) + ")";
+        } else {
+          outEl.textContent = "לא נטענה טמפרטורה.";
+          if (diagEl && data.diag) {
+            diagEl.textContent = data.diag;
+            diagEl.style.display = "block";
+          }
+        }
+      } catch (e) {
+        outEl.textContent = "שגיאת בקשה.";
+        if (diagEl) {
+          diagEl.textContent = e.message || String(e);
+          diagEl.style.display = "block";
+        }
+      }
+    }
+
+    function scheduleWeatherPreviewRefresh() {
+      if (!accessToken) return;
+      clearTimeout(weatherPreviewTimer);
+      weatherPreviewTimer = setTimeout(() => {
+        refreshWeatherPreview().catch(() => {});
+      }, 900);
+    }
+
+    function getRole() {
+      return localStorage.getItem(STORAGE_ROLE_KEY) || "admin";
+    }
+    function isViewer() {
+      return getRole() === "viewer";
+    }
+    function isAdmin() {
+      return getRole() === "admin";
+    }
+    function isElevatorScoped() {
+      return !!(localStorage.getItem(STORAGE_SCOPE_KEY) || "").trim();
+    }
+
+    function setDetailReadonly() {
+      const viewer = isViewer();
+      const detail = document.getElementById("detailWrap");
+      if (!detail || detail.classList.contains("hidden")) return;
+      detail.querySelectorAll("input, textarea, select").forEach((el) => {
+        if (el.id === "fFile") return;
+        el.disabled = viewer;
+      });
+    }
+
+    function updateSidebarSubtitle() {
+      const sub = document.getElementById("sidebarSubtitle");
+      if (!sub) return;
+      if (currentView === "users") {
+        sub.textContent = "ניהול משתמשים";
+        return;
+      }
+      if (currentView === "media") {
+        sub.textContent = "כל קבצי המדיה";
+        return;
+      }
+      if (currentView === "audit") {
+        sub.textContent = "לוג פעולות";
+        return;
+      }
+      if (currentView === "settings") {
+        sub.textContent = "הגדרות מערכת";
+        return;
+      }
+      sub.textContent = isElevatorScoped() ? "גישה למסך אחד בלבד" : "לוח בקרה";
+    }
+
+    function applyRoleUi() {
+      const viewer = isViewer();
+      const admin = isAdmin();
+      const scoped = isElevatorScoped();
+      document.body.dataset.userRole = getRole();
+      document.body.dataset.elevatorScope = scoped ? "1" : "";
+      document.getElementById("navUsers")?.classList.toggle("hidden", !admin);
+      document.getElementById("navAllMedia")?.classList.toggle("hidden", !admin);
+      document.getElementById("navAudit")?.classList.toggle("hidden", !admin);
+      document.getElementById("navSettings")?.classList.toggle("hidden", !admin);
+      document.getElementById("clientDownloadsAdminBar")?.classList.toggle("hidden", !admin);
+      document.getElementById("rowNewElev")?.classList.toggle("hidden", viewer || scoped);
+      document.getElementById("btnSave")?.classList.toggle("hidden", viewer);
+      document.getElementById("btnDeleteElev")?.classList.toggle("hidden", viewer || scoped);
+      document.querySelector(".search-wrap")?.classList.toggle("hidden", scoped);
+      ["btnPickFile", "btnUploadMedia", "btnDeleteAllMedia", "btnPickLogo", "btnUploadLogo", "btnDeleteLogo"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle("hidden", viewer);
+      });
+      updateSidebarSubtitle();
+      setDetailReadonly();
+      if (selectedId) renderMediaList();
+    }
+
+    async function loadMe() {
+      const { user } = await api("/api/auth/me");
+      if (user) {
+        localStorage.setItem(STORAGE_ROLE_KEY, user.role || "admin");
+        if (user.allowed_elevator_id) localStorage.setItem(STORAGE_SCOPE_KEY, user.allowed_elevator_id);
+        else localStorage.removeItem(STORAGE_SCOPE_KEY);
+      }
+    }
+
+    function toast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+    function api(path, opts = {}) {
+      const headers = { ...opts.headers };
+      const isJson = opts.body && typeof opts.body === "string";
+      if (isJson && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+      if (accessToken) headers["Authorization"] = "Bearer " + accessToken;
+      return fetch(path, { ...opts, headers }).then(async (r) => {
+        const text = await r.text();
+        let data;
+        try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+        if (!r.ok) throw new Error((data && data.error) || r.statusText || "שגיאה");
+        return data;
+      });
+    }
+
+    async function fetchJsonNoAuth(path, opts = {}) {
+      const headers = { ...opts.headers };
+      if (opts.body && typeof opts.body === "string") headers["Content-Type"] = "application/json";
+      const r = await fetch(path, { ...opts, headers });
+      const text = await r.text();
+      let data;
+      try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+      if (!r.ok) throw new Error((data && data.error) || r.statusText || "שגיאה");
+      return data;
+    }
+
+    function hideMediaUploadProgressUI() {
+      const wrap = document.getElementById("mediaUploadProgressWrap");
+      const fill = document.getElementById("mediaUploadProgressFill");
+      const pct = document.getElementById("mediaUploadProgressPct");
+      const title = document.getElementById("mediaUploadProgressTitle");
+      if (wrap) wrap.classList.add("hidden");
+      if (fill) {
+        fill.style.width = "0%";
+        fill.style.opacity = "1";
+      }
+      if (pct) pct.textContent = "0%";
+      if (title) title.textContent = "העלאה לשרת";
+    }
+    function updateMediaUploadProgressUI(percent) {
+      const wrap = document.getElementById("mediaUploadProgressWrap");
+      const fill = document.getElementById("mediaUploadProgressFill");
+      const pct = document.getElementById("mediaUploadProgressPct");
+      const title = document.getElementById("mediaUploadProgressTitle");
+      if (!wrap || !fill || !pct) return;
+      wrap.classList.remove("hidden");
+      if (percent < 0) {
+        if (title) title.textContent = "העלאה לשרת";
+        pct.textContent = "מעלה…";
+        fill.style.width = "100%";
+        fill.style.opacity = "0.35";
+        return;
+      }
+      const p = Math.min(100, Math.max(0, percent));
+      fill.style.opacity = "1";
+      fill.style.width = p + "%";
+      pct.textContent = Math.round(p) + "%";
+      if (title) title.textContent = p >= 100 ? "העלאה הושלמה" : "העלאה לשרת";
+    }
+    function postFormDataWithUploadProgress(url, formData, token, onProgress) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", url);
+        xhr.setRequestHeader("Authorization", "Bearer " + token);
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable) onProgress((ev.loaded / ev.total) * 100);
+          else onProgress(-1);
+        };
+        xhr.onload = () => {
+          const text = xhr.responseText;
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(text ? JSON.parse(text) : null);
+            } catch {
+              resolve(null);
+            }
+          } else {
+            let msg = "העלאה נכשלה";
+            try {
+              const d = JSON.parse(text);
+              if (d && d.error) msg = d.error;
+            } catch (_) {}
+            reject(new Error(msg));
+          }
+        };
+        xhr.onerror = () => reject(new Error("שגיאת רשת"));
+        xhr.send(formData);
+      });
+    }
+
+    function showLoginMode(needsSetup) {
+      document.getElementById("loginBlock").classList.toggle("hidden", !!needsSetup);
+      document.getElementById("setupBlock").classList.toggle("hidden", !needsSetup);
+    }
+
+    let previewMediaId = null;
+    let logoPreviewObjectUrl = null;
+    let bgPreviewObjectUrl = null;
+
+    function revokeBgPreviewUrl() {
+      if (bgPreviewObjectUrl) {
+        URL.revokeObjectURL(bgPreviewObjectUrl);
+        bgPreviewObjectUrl = null;
+      }
+    }
+
+    function revokeLogoPreviewUrl() {
+      if (logoPreviewObjectUrl) {
+        URL.revokeObjectURL(logoPreviewObjectUrl);
+        logoPreviewObjectUrl = null;
+      }
+    }
+
+    async function refreshLogoPreview() {
+      const e = elevators.find((x) => x.id === selectedId);
+      const img = document.getElementById("logoPreview");
+      const empty = document.getElementById("logoPreviewEmpty");
+      revokeLogoPreviewUrl();
+      if (!img || !empty) return;
+      if (!e?.logo_filename) {
+        img.style.display = "none";
+        img.removeAttribute("src");
+        empty.style.display = "";
+        return;
+      }
+      try {
+        const r = await fetch("/api/elevators/" + e.id + "/logo", {
+          headers: { Authorization: "Bearer " + accessToken },
+        });
+        if (!r.ok) throw new Error("no logo");
+        const blob = await r.blob();
+        logoPreviewObjectUrl = URL.createObjectURL(blob);
+        img.src = logoPreviewObjectUrl;
+        img.style.display = "block";
+        empty.style.display = "none";
+      } catch {
+        img.style.display = "none";
+        img.removeAttribute("src");
+        empty.style.display = "";
+      }
+    }
+
+    async function refreshBackgroundPreview() {
+      const e = elevators.find((x) => x.id === selectedId);
+      const img = document.getElementById("bgPreview");
+      const empty = document.getElementById("bgPreviewEmpty");
+      revokeBgPreviewUrl();
+      if (!img || !empty) return;
+      if (!e?.background_filename) {
+        img.style.display = "none";
+        img.removeAttribute("src");
+        empty.style.display = "";
+        return;
+      }
+      try {
+        const r = await fetch("/api/elevators/" + e.id + "/background", {
+          headers: { Authorization: "Bearer " + accessToken },
+        });
+        if (!r.ok) throw new Error("no background");
+        const blob = await r.blob();
+        bgPreviewObjectUrl = URL.createObjectURL(blob);
+        img.src = bgPreviewObjectUrl;
+        img.style.display = "block";
+        empty.style.display = "none";
+      } catch {
+        img.style.display = "none";
+        img.removeAttribute("src");
+        empty.style.display = "";
+      }
+    }
+
+    function mediaUrlForItem(e, filename) {
+      if (!e?.token || !filename) return "";
+      const origin = window.location.origin;
+      return origin + "/api/player/media/" + encodeURIComponent(filename) + "?token=" + encodeURIComponent(e.token);
+    }
+
+    function refreshPreview() {
+      const e = elevators.find((x) => x.id === selectedId);
+      const vid = document.getElementById("previewVideo");
+      const img = document.getElementById("previewImage");
+      const ph = document.getElementById("previewPlaceholder");
+      const pill = document.getElementById("mediaPill");
+      const list = e?.media || [];
+      vid.classList.add("hidden");
+      img.classList.add("hidden");
+      vid.removeAttribute("src");
+      img.removeAttribute("src");
+      document.getElementById("btnDeleteAllMedia").disabled = !list.length || isViewer();
+      if (!list.length) {
+        ph.classList.remove("hidden");
+        pill.textContent = "אין מדיה";
+        pill.classList.remove("hidden");
+        pill.classList.add("warn");
+        previewMediaId = null;
+        return;
+      }
+      let mid = previewMediaId;
+      if (!mid || !list.some((m) => m.id === mid)) mid = list[0].id;
+      previewMediaId = mid;
+      const m = list.find((x) => x.id === mid);
+      ph.classList.add("hidden");
+      pill.textContent = list.length + " פריטים בפלייליסט";
+      pill.classList.remove("hidden", "warn");
+      const url = mediaUrlForItem(e, m.filename);
+      if (m.media_type === "video") {
+        vid.classList.remove("hidden");
+        vid.src = url;
+        vid.play().catch(() => {});
+      } else {
+        img.classList.remove("hidden");
+        img.src = url;
+        img.onerror = () => {
+          ph.classList.remove("hidden");
+          ph.textContent = "לא ניתן לטעון תצוגה מקדימה";
+        };
+      }
+    }
+
+    function renderMediaList() {
+      const e = elevators.find((x) => x.id === selectedId);
+      const container = document.getElementById("mediaList");
+      container.innerHTML = "";
+      const list = e?.media || [];
+      list.forEach((m, idx) => {
+        const row = document.createElement("div");
+        row.className = "media-row" + (isViewer() ? " media-row-readonly" : "");
+        const thumb = document.createElement("div");
+        thumb.className = "media-row-thumb";
+        thumb.title = "תצוגה מקדימה";
+        thumb.onclick = () => {
+          previewMediaId = m.id;
+          refreshPreview();
+        };
+        if (m.media_type === "image") {
+          const im = document.createElement("img");
+          im.src = mediaUrlForItem(e, m.filename);
+          im.alt = "";
+          thumb.appendChild(im);
+        } else {
+          thumb.textContent = "▶";
+        }
+        const meta = document.createElement("div");
+        meta.className = "media-row-meta";
+        meta.innerHTML = "<div class=\"media-row-name\"></div><div class=\"media-row-sub\"></div>";
+        meta.querySelector(".media-row-name").textContent = m.filename;
+        meta.querySelector(".media-row-sub").textContent = m.media_type === "video" ? "וידאו" : "תמונה";
+        const actions = document.createElement("div");
+        actions.className = "media-row-actions";
+        if (!isViewer()) {
+          const up = document.createElement("button");
+          up.type = "button";
+          up.className = "btn btn-ghost btn-sm";
+          up.textContent = "↑";
+          up.disabled = idx === 0;
+          up.onclick = () => moveMedia(m.id, -1);
+          const down = document.createElement("button");
+          down.type = "button";
+          down.className = "btn btn-ghost btn-sm";
+          down.textContent = "↓";
+          down.disabled = idx === list.length - 1;
+          down.onclick = () => moveMedia(m.id, 1);
+          const del = document.createElement("button");
+          del.type = "button";
+          del.className = "btn btn-danger ghost btn-sm";
+          del.textContent = "מחק";
+          del.onclick = () => deleteOneMedia(m.id);
+          actions.appendChild(up);
+          actions.appendChild(down);
+          actions.appendChild(del);
+        }
+        row.appendChild(thumb);
+        row.appendChild(meta);
+        row.appendChild(actions);
+        container.appendChild(row);
+      });
+      refreshPreview();
+    }
+
+    async function moveMedia(mediaId, dir) {
+      if (!selectedId) return;
+      const e = elevators.find((x) => x.id === selectedId);
+      const order = (e.media || []).map((x) => x.id);
+      const i = order.indexOf(mediaId);
+      if (i < 0) return;
+      const j = i + dir;
+      if (j < 0 || j >= order.length) return;
+      [order[i], order[j]] = [order[j], order[i]];
+      await api("/api/elevators/" + selectedId + "/media-order", {
+        method: "PATCH",
+        body: JSON.stringify({ order }),
+      });
+      await loadElevators();
+      selectElevator(selectedId);
+      toast("סדר עודכן");
+    }
+
+    async function deleteOneMedia(mediaId) {
+      if (!selectedId || !confirm("למחוק פריט זה מהפלייליסט?")) return;
+      await api("/api/elevators/" + selectedId + "/media/" + mediaId, { method: "DELETE" });
+      previewMediaId = null;
+      await loadElevators();
+      selectElevator(selectedId);
+      toast("נמחק");
+    }
+
+    function clearIdleGraceInterval() {
+      if (idleGraceInterval) {
+        clearInterval(idleGraceInterval);
+        idleGraceInterval = null;
+      }
+    }
+    function clearIdleWatchTimer() {
+      if (idleWatchTimer) {
+        clearTimeout(idleWatchTimer);
+        idleWatchTimer = null;
+      }
+    }
+    function clearAllIdleTimers() {
+      clearIdleWatchTimer();
+      clearIdleGraceInterval();
+    }
+    function hideIdleLogoutModal() {
+      document.getElementById("idleLogoutModal")?.classList.add("hidden");
+    }
+    function formatIdleCountdown(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return m + ":" + String(s).padStart(2, "0");
+    }
+    function scheduleIdleLogoutTimer() {
+      clearIdleWatchTimer();
+      const appEl = document.getElementById("app");
+      if (!accessToken || !appEl || appEl.classList.contains("hidden")) return;
+      idleWatchTimer = setTimeout(() => {
+        idleWatchTimer = null;
+        showIdleLogoutModal();
+      }, IDLE_MS);
+    }
+    function showIdleLogoutModal() {
+      const modal = document.getElementById("idleLogoutModal");
+      const countEl = document.getElementById("idleLogoutCountdown");
+      if (!modal || !countEl) return;
+      clearIdleWatchTimer();
+      clearIdleGraceInterval();
+      let sec = IDLE_GRACE_SEC;
+      function tick() {
+        countEl.textContent = formatIdleCountdown(sec);
+        if (sec <= 0) {
+          clearIdleGraceInterval();
+          performLogout({ idle: true });
+          return;
+        }
+        sec--;
+      }
+      tick();
+      modal.classList.remove("hidden");
+      idleGraceInterval = setInterval(tick, 1000);
+    }
+    function onIdleUserActivity() {
+      const modal = document.getElementById("idleLogoutModal");
+      if (modal && !modal.classList.contains("hidden")) return;
+      scheduleIdleLogoutTimer();
+    }
+    function bindIdleActivityListeners() {
+      if (bindIdleActivityListeners._done) return;
+      bindIdleActivityListeners._done = true;
+      ["pointerdown", "keydown", "scroll", "touchstart"].forEach((evt) => {
+        document.addEventListener(evt, onIdleUserActivity, { capture: true, passive: true });
+      });
+    }
+    function performLogout(opts) {
+      const idle = opts && opts.idle;
+      clearAllIdleTimers();
+      hideIdleLogoutModal();
+      accessToken = "";
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem("pirsum_user_email");
+      localStorage.removeItem(STORAGE_ROLE_KEY);
+      localStorage.removeItem(STORAGE_SCOPE_KEY);
+      if (idle) toast("המערכת התנתקה אחרי חוסר פעילות");
+      document.getElementById("authWrap").classList.remove("hidden");
+      document.getElementById("loginPanel").classList.remove("hidden");
+      document.getElementById("app").classList.add("hidden");
+    }
+    function showLogin() {
+      performLogout({});
+    }
+    const DEFAULT_PLAYER_SERVER_URL = "https://lift.s-tech.co.il";
+    const STORAGE_PLAYER_BASE_URL = "pirsum_admin_player_base_url";
+
+    function loadPlayerBaseUrlField() {
+      const el = document.getElementById("playerBaseUrlHint");
+      if (!el) return;
+      const saved = localStorage.getItem(STORAGE_PLAYER_BASE_URL);
+      if (saved === null) {
+        el.value = DEFAULT_PLAYER_SERVER_URL;
+      } else {
+        el.value = saved;
+      }
+    }
+
+    function persistPlayerBaseUrl() {
+      const el = document.getElementById("playerBaseUrlHint");
+      if (!el) return;
+      localStorage.setItem(STORAGE_PLAYER_BASE_URL, el.value.trim());
+    }
+
+    async function loadClientDownloads() {
+      const listEl = document.getElementById("clientDownloadsList");
+      const emptyEl = document.getElementById("clientDownloadsEmpty");
+      if (!listEl || !emptyEl) return;
+      listEl.innerHTML = "";
+      const admin = isAdmin();
+      const baseHintAdmin =
+        "ניתן להעלות קובץ למטה (מנהלים) — Windows: בנייה מ־<code dir=\"ltr\" style=\"font-size:0.85em;\">player-v2</code> (<code dir=\"ltr\" style=\"font-size:0.85em;\">npm run dist:win</code>). Android: קובץ <code dir=\"ltr\" style=\"font-size:0.85em;\">.apk</code> מתוך <code dir=\"ltr\" style=\"font-size:0.85em;\">android/app/build/outputs/...</code> אחרי <code dir=\"ltr\" style=\"font-size:0.85em;\">assembleRelease</code>. או להעתיק ידנית לתיקיית <code dir=\"ltr\" style=\"font-size:0.85em;\">server/public/downloads/</code> / <code dir=\"ltr\" style=\"font-size:0.85em;\">CLIENT_DOWNLOADS_DIR</code>.";
+      const baseHintNonAdmin = "פנה למנהל המערכת להעלאת קובץ התקנה.";
+      try {
+        const r = await fetch("/api/client-downloads");
+        const data = await r.json();
+        const files = Array.isArray(data.files) ? data.files : [];
+        if (files.length === 0) {
+          emptyEl.style.display = "block";
+          emptyEl.innerHTML = admin
+            ? "אין כרגע קובץ התקנה בשרת. " + baseHintAdmin
+            : "אין כרגע קובץ התקנה בשרת. " + baseHintNonAdmin;
+          return;
+        }
+        emptyEl.style.display = "none";
+        files.forEach((f) => {
+          const wrap = document.createElement("div");
+          wrap.style.cssText =
+            "padding:0.65rem 0.75rem;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface-input);";
+          const row = document.createElement("div");
+          row.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;";
+          const a = document.createElement("a");
+          a.href = f.url;
+          a.className = "btn btn-primary btn-sm";
+          a.rel = "noopener";
+          a.textContent = "הורד — " + f.name;
+          row.appendChild(a);
+          if (admin) {
+            const del = document.createElement("button");
+            del.type = "button";
+            del.className = "btn btn-danger ghost btn-sm";
+            del.textContent = "מחק מהשרת";
+            del.onclick = async () => {
+              if (!confirm("למחוק את הקובץ " + f.name + " מהשרת?")) return;
+              try {
+                await api("/api/admin/client-downloads/" + encodeURIComponent(f.name), { method: "DELETE" });
+                toast("הקובץ הוסר");
+                await loadClientDownloads();
+              } catch (e) {
+                toast(e.message || "שגיאה במחיקה");
+              }
+            };
+            row.appendChild(del);
+          }
+          wrap.appendChild(row);
+          const hint = document.createElement("p");
+          hint.className = "field-hint";
+          hint.style.cssText = "margin:0.4rem 0 0;word-break:break-all;";
+          const full = (window.location.origin || "") + f.url;
+          hint.innerHTML =
+            "קישור ישיר לשיתוף: <code dir=\"ltr\" style=\"font-size:0.82em;user-select:all;\">" + full + "</code>";
+          wrap.appendChild(hint);
+          listEl.appendChild(wrap);
+        });
+      } catch {
+        emptyEl.style.display = "block";
+        emptyEl.innerHTML = admin
+          ? "לא ניתן לטעון רשימת קבצים. " + baseHintAdmin
+          : "לא ניתן לטעון רשימת קבצים. " + baseHintNonAdmin;
+      }
+    }
+
+    function showApp() {
+      document.getElementById("authWrap").classList.add("hidden");
+      document.getElementById("loginPanel").classList.add("hidden");
+      document.getElementById("app").classList.remove("hidden");
+      initWeatherCityPresets();
+      scheduleIdleLogoutTimer();
+      loadPlayerBaseUrlField();
+      loadClientDownloads();
+    }
+
+    function applyElevatorFilter() {
+      const q = (document.getElementById("sidebarSearch")?.value || "").trim().toLowerCase();
+      document.querySelectorAll(".elev-card").forEach((card) => {
+        const name = card.querySelector(".elev-name")?.textContent.toLowerCase() || "";
+        card.style.display = !q || name.includes(q) ? "" : "none";
+      });
+    }
+
+    async function loadElevators() {
+      elevators = await api("/api/elevators");
+      const list = document.getElementById("elevatorList");
+      list.innerHTML = "";
+      elevators.forEach((e) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "elev-card" + (selectedId === e.id ? " active" : "");
+        const thumb = document.createElement("div");
+        thumb.className = "elev-thumb";
+        const first = e.media && e.media[0];
+        if (first && first.media_type === "image") {
+          const im = document.createElement("img");
+          im.src = mediaUrlForItem(e, first.filename);
+          im.alt = "";
+          thumb.appendChild(im);
+        } else if (first && first.media_type === "video") {
+          thumb.innerHTML = "<span style=font-size:1.5rem;line-height:1>▶</span>";
+          thumb.title = "וידאו";
+        } else {
+          thumb.textContent = "🛗";
+        }
+        const meta = document.createElement("div");
+        meta.className = "elev-meta";
+        meta.innerHTML = "<div class=\"elev-name\"></div><div class=\"elev-sub\"></div>";
+        meta.querySelector(".elev-name").textContent = e.name;
+        const n = e.media?.length || 0;
+        const mediaLine = n ? n + " פריטים במסך" : "ללא מדיה";
+        const ls = e.last_seen_at || 0;
+        const ONLINE_MS = 90 * 1000;
+        const online = ls > 0 && Date.now() - ls < ONLINE_MS;
+        let line2 = "";
+        if (!ls) line2 = "מסך: לא דווח לשרת";
+        else if (online) line2 = "מסך: מקוון · " + new Date(ls).toLocaleString("he-IL");
+        else line2 = "מסך: לא מקוון · אחרון " + new Date(ls).toLocaleString("he-IL");
+        meta.querySelector(".elev-sub").innerHTML =
+          "<span>" +
+          mediaLine +
+          "</span><br/><span style=\"font-size:0.72rem;color:" +
+          (online ? "#52c41a" : "#8b9bb4") +
+          "\">" +
+          line2 +
+          "</span>";
+        card.appendChild(thumb);
+        card.appendChild(meta);
+        card.onclick = () => selectElevator(e.id);
+        list.appendChild(card);
+      });
+      applyElevatorFilter();
+      const scoped = isElevatorScoped();
+      if (scoped && elevators.length) {
+        const still = selectedId && elevators.some((x) => x.id === selectedId);
+        if (!still) selectElevator(elevators[0].id);
+      }
+    }
+
+    let cityPresetProgrammatic = false;
+    /** טOLERANCE ~3 ק״מ — התאמה לבחירה מהרשימה אחרי טעינת מתקן */
+    const WEATHER_GEO_MATCH_EPS = 0.028;
+    /** ערים בישראל (קואורדינטות לשירות מזג האוויר בשרת — Open‑Meteo). */
+    const ISRAEL_WEATHER_PRESETS = [
+      { id: "eilat", label: "אילת", lat: 29.5577, lon: 34.9519, city: "אילת" },
+      { id: "ashdod", label: "אשדוד", lat: 31.8044, lon: 34.6553, city: "אשדוד" },
+      { id: "ashkelon", label: "אשקלון", lat: 31.6688, lon: 34.5743, city: "אשקלון" },
+      { id: "beer-sheva", label: "באר שבע", lat: 31.2518, lon: 34.7915, city: "באר שבע" },
+      { id: "beit-shean", label: "בית שאן", lat: 32.4971, lon: 35.4973, city: "בית שאן" },
+      { id: "givatayim", label: "גבעתיים", lat: 32.0781, lon: 34.8047, city: "גבעתיים" },
+      { id: "dimona", label: "דימונה", lat: 31.0669, lon: 35.0337, city: "דימונה" },
+      { id: "hod-hasharon", label: "הוד השרון", lat: 32.1498, lon: 34.8839, city: "הוד השרון" },
+      { id: "herzliya", label: "הרצליה", lat: 32.1624, lon: 34.8447, city: "הרצליה" },
+      { id: "hadera", label: "חדרה", lat: 32.434, lon: 34.9196, city: "חדרה" },
+      { id: "holon", label: "חולון", lat: 32.0158, lon: 34.7874, city: "חולון" },
+      { id: "haifa", label: "חיפה", lat: 32.794, lon: 34.9896, city: "חיפה" },
+      { id: "tiberias", label: "טבריה", lat: 32.7959, lon: 35.531, city: "טבריה" },
+      { id: "yavne", label: "יבנה", lat: 31.8779, lon: 34.7319, city: "יבנה" },
+      { id: "jerusalem", label: "ירושלים", lat: 31.7683, lon: 35.2137, city: "ירושלים" },
+      { id: "kfar-saba", label: "כפר סבא", lat: 32.175, lon: 34.9069, city: "כפר סבא" },
+      { id: "karmiel", label: "כרמיאל", lat: 32.9147, lon: 35.2923, city: "כרמיאל" },
+      { id: "lod", label: "לוד", lat: 31.9514, lon: 34.8958, city: "לוד" },
+      { id: "modiin", label: "מודיעין–מכבים–רעות", lat: 31.8903, lon: 35.0104, city: "מודיעין" },
+      { id: "nahariya", label: "נהריה", lat: 33.0085, lon: 35.0981, city: "נהריה" },
+      { id: "nazareth", label: "נצרת", lat: 32.6996, lon: 35.3035, city: "נצרת" },
+      { id: "netanya", label: "נתניה", lat: 32.3324, lon: 34.8555, city: "נתניה" },
+      { id: "acre", label: "עכו", lat: 32.9268, lon: 35.0718, city: "עכו" },
+      { id: "afula", label: "עפולה", lat: 32.6074, lon: 35.2899, city: "עפולה" },
+      { id: "pt", label: "פתח תקווה", lat: 32.084, lon: 34.8878, city: "פתח תקווה" },
+      { id: "zefat", label: "צפת", lat: 32.9646, lon: 35.496, city: "צפת" },
+      { id: "kiryat-ata", label: "קריית אתא", lat: 32.8051, lon: 35.1735, city: "קריית אתא" },
+      { id: "kiryat-gat", label: "קריית גת", lat: 31.6101, lon: 34.7688, city: "קריית גת" },
+      { id: "kiryat-shmona", label: "קריית שמונה", lat: 33.2079, lon: 35.5702, city: "קריית שמונה" },
+      { id: "rishon", label: "ראשון לציון", lat: 31.973, lon: 34.7925, city: "ראשון לציון" },
+      { id: "rosh-haayin", label: "ראש העין", lat: 32.0956, lon: 34.9458, city: "ראש העין" },
+      { id: "rehovot", label: "רחובות", lat: 31.8948, lon: 34.8113, city: "רחובות" },
+      { id: "ramla", label: "רמלה", lat: 31.9316, lon: 34.8729, city: "רמלה" },
+      { id: "ramat-gan", label: "רמת גן", lat: 32.0684, lon: 34.8246, city: "רמת גן" },
+      { id: "sderot", label: "שדרות", lat: 31.5247, lon: 34.5962, city: "שדרות" },
+      { id: "tel-aviv", label: "תל אביב–יפו", lat: 32.0853, lon: 34.7818, city: "תל אביב" },
+    ];
+
+    function initWeatherCityPresets() {
+      const sel = document.getElementById("cityPresetSelect");
+      if (!sel || sel.dataset.wired === "1") return;
+      sel.dataset.wired = "1";
+      sel.innerHTML = "";
+      const z = document.createElement("option");
+      z.value = "";
+      z.textContent = "— בחר עיר מהרשימה —";
+      sel.appendChild(z);
+      const sorted = [...ISRAEL_WEATHER_PRESETS].sort((a, b) => a.label.localeCompare(b.label, "he"));
+      sorted.forEach((p) => {
+        const o = document.createElement("option");
+        o.value = p.id;
+        o.textContent = p.label;
+        o.dataset.lat = String(p.lat);
+        o.dataset.lon = String(p.lon);
+        o.dataset.city = p.city;
+        sel.appendChild(o);
+      });
+      const m = document.createElement("option");
+      m.value = "__manual__";
+      m.textContent = "הזנה ידנית / קואורדינטות מותאמות";
+      sel.appendChild(m);
+      sel.addEventListener("change", onWeatherCityPresetChange);
+      ["fLat", "fLon", "fCity"].forEach((fid) => {
+        document.getElementById(fid)?.addEventListener("input", () => {
+          if (cityPresetProgrammatic) return;
+          syncWeatherCityPresetFromFields();
+          scheduleWeatherPreviewRefresh();
+        });
+      });
+    }
+
+    function onWeatherCityPresetChange() {
+      const sel = document.getElementById("cityPresetSelect");
+      if (!sel) return;
+      const v = sel.value;
+      if (!v || v === "__manual__") return;
+      const opt = sel.selectedOptions[0];
+      if (!opt?.dataset?.lat) return;
+      cityPresetProgrammatic = true;
+      document.getElementById("fLat").value = opt.dataset.lat;
+      document.getElementById("fLon").value = opt.dataset.lon;
+      document.getElementById("fCity").value = opt.dataset.city || "";
+      cityPresetProgrammatic = false;
+      scheduleWeatherPreviewRefresh();
+    }
+
+    function findWeatherPresetIdForCoords(lat, lon) {
+      const la = parseFloat(lat);
+      const lo = parseFloat(lon);
+      if (Number.isNaN(la) || Number.isNaN(lo)) return null;
+      const p = ISRAEL_WEATHER_PRESETS.find(
+        (x) => Math.abs(x.lat - la) < WEATHER_GEO_MATCH_EPS && Math.abs(x.lon - lo) < WEATHER_GEO_MATCH_EPS,
+      );
+      return p ? p.id : null;
+    }
+
+    function syncWeatherCityPresetFromFields() {
+      const sel = document.getElementById("cityPresetSelect");
+      if (!sel) return;
+      const la = parseFloat(document.getElementById("fLat")?.value);
+      const lo = parseFloat(document.getElementById("fLon")?.value);
+      const matched = findWeatherPresetIdForCoords(la, lo);
+      const next = matched || "__manual__";
+      if (sel.value !== next) {
+        cityPresetProgrammatic = true;
+        sel.value = next;
+        cityPresetProgrammatic = false;
+      }
+    }
+
+    function selectElevator(id) {
+      selectedId = id;
+      const e = elevators.find((x) => x.id === id);
+      document.querySelectorAll(".elev-card").forEach((el, i) => {
+        el.classList.toggle("active", elevators[i]?.id === id);
+      });
+      document.getElementById("emptyMain").classList.add("hidden");
+      document.getElementById("detailWrap").classList.remove("hidden");
+      if (!e) return;
+      document.getElementById("detailTitle").textContent = e.name;
+      const bc = document.getElementById("breadcrumbCurrent");
+      if (bc) bc.textContent = e.name;
+      document.getElementById("detailToken").textContent = e.token;
+      document.getElementById("fName").value = e.name;
+      document.getElementById("fHeaderPhone").value = e.header_phone != null && e.header_phone !== "" ? e.header_phone : "";
+      document.getElementById("fRss").value = e.rss_url || "";
+      document.getElementById("fSide").value = e.side_ticker_text || "";
+      document.getElementById("fRssText").value = e.rss_ticker_text || "";
+      document.getElementById("fRssDur").value =
+        e.rss_track_duration_sec != null && e.rss_track_duration_sec !== "" ? e.rss_track_duration_sec : 48;
+      document.getElementById("fSideDur").value =
+        e.side_ticker_duration_sec != null && e.side_ticker_duration_sec !== "" ? e.side_ticker_duration_sec : 150;
+      document.getElementById("fLat").value = e.latitude ?? "";
+      document.getElementById("fLon").value = e.longitude ?? "";
+      document.getElementById("fCity").value = e.city_label || "";
+      syncWeatherCityPresetFromFields();
+      document.getElementById("fFontClockTime").value =
+        e.font_clock_time_px != null && e.font_clock_time_px !== "" ? e.font_clock_time_px : 24;
+      document.getElementById("fFontClockDate").value =
+        e.font_clock_date_px != null && e.font_clock_date_px !== "" ? e.font_clock_date_px : 14;
+      document.getElementById("fFontWeather").value =
+        e.font_weather_px != null && e.font_weather_px !== "" ? e.font_weather_px : 16;
+      document.getElementById("fFontBrand").value =
+        e.font_brand_px != null && e.font_brand_px !== "" ? e.font_brand_px : 20;
+      document.getElementById("fLogoMaxH").value =
+        e.logo_max_height_px != null && e.logo_max_height_px !== "" ? e.logo_max_height_px : 48;
+      document.getElementById("fFontSide").value =
+        e.font_side_ticker_px != null && e.font_side_ticker_px !== "" ? e.font_side_ticker_px : 14;
+      document.getElementById("fFontRss").value = e.font_rss_px != null && e.font_rss_px !== "" ? e.font_rss_px : 15;
+      document.getElementById("fMediaScale").value =
+        e.media_scale_percent != null && e.media_scale_percent !== "" ? e.media_scale_percent : 100;
+      document.getElementById("fExitPassword").value = e.exit_password != null && e.exit_password !== "" ? e.exit_password : "12345";
+      document.getElementById("fFile").value = "";
+      document.getElementById("btnUploadMedia").disabled = true || isViewer();
+      previewMediaId = null;
+      renderMediaList();
+      setDetailReadonly();
+      refreshLogoPreview();
+      refreshBackgroundPreview();
+      refreshWeatherPreview().catch(() => {});
+    }
+
+    function saveSession(data) {
+      accessToken = data.token;
+      localStorage.setItem(STORAGE_KEY, data.token);
+      if (data.user && data.user.email) localStorage.setItem("pirsum_user_email", data.user.email);
+      if (data.user) {
+        localStorage.setItem(STORAGE_ROLE_KEY, data.user.role || "admin");
+        if (data.user.allowed_elevator_id) localStorage.setItem(STORAGE_SCOPE_KEY, data.user.allowed_elevator_id);
+        else localStorage.removeItem(STORAGE_SCOPE_KEY);
+      }
+    }
+
+    document.getElementById("btnLogin").onclick = async () => {
+      const err = document.getElementById("loginErr");
+      err.textContent = "";
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+      try {
+        const data = await fetchJsonNoAuth("/api/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email, password }),
+        });
+        saveSession(data);
+        showApp();
+        try {
+          await loadMe();
+        } catch (_) {}
+        await loadElevators();
+        applyRoleUi();
+        restoreNavViewAfterAuth();
+      } catch (e) {
+        err.textContent = e.message || "התחברות נכשלה";
+      }
+    };
+
+    document.getElementById("btnSetup").onclick = async () => {
+      const err = document.getElementById("loginErr");
+      err.textContent = "";
+      const email = document.getElementById("setupEmail").value.trim();
+      const p1 = document.getElementById("setupPassword").value;
+      const p2 = document.getElementById("setupPassword2").value;
+      if (p1 !== p2) {
+        err.textContent = "הסיסמאות אינן זהות";
+        return;
+      }
+      try {
+        const data = await fetchJsonNoAuth("/api/auth/register-first", {
+          method: "POST",
+          body: JSON.stringify({ email, password: p1 }),
+        });
+        saveSession(data);
+        showApp();
+        try {
+          await loadMe();
+        } catch (_) {}
+        await loadElevators();
+        applyRoleUi();
+        restoreNavViewAfterAuth();
+        toast("חשבון מנהל נוצר");
+      } catch (e) {
+        err.textContent = e.message || "שגיאה";
+      }
+    };
+
+    document.getElementById("btnToggleForgot")?.addEventListener("click", () => {
+      const b = document.getElementById("forgotPasswordBlock");
+      if (!b) return;
+      const on = b.classList.toggle("hidden");
+      if (!on) {
+        const le = document.getElementById("loginEmail");
+        const fe = document.getElementById("forgotEmail");
+        if (le && fe && !fe.value) fe.value = le.value.trim();
+      }
+    });
+    document.getElementById("btnForgotCancel")?.addEventListener("click", () => {
+      document.getElementById("forgotPasswordBlock")?.classList.add("hidden");
+    });
+    document.getElementById("btnForgotSend")?.addEventListener("click", async () => {
+      const err = document.getElementById("loginErr");
+      err.textContent = "";
+      const email = document.getElementById("forgotEmail")?.value?.trim() || "";
+      try {
+        await fetchJsonNoAuth("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+        err.style.color = "var(--muted)";
+        err.textContent = "אם כתובת האימייל קיימת במערכת, יישלח אליה קישור לאיפוס (בדוק גם בספאם).";
+        document.getElementById("forgotPasswordBlock")?.classList.add("hidden");
+      } catch (e) {
+        err.style.color = "var(--danger)";
+        err.textContent = e.message || "שגיאה";
+      }
+    });
+    document.getElementById("btnResetPassword")?.addEventListener("click", async () => {
+      const err = document.getElementById("loginErr");
+      err.textContent = "";
+      err.style.color = "var(--danger)";
+      const token = document.getElementById("resetTokenField")?.value?.trim() || "";
+      const p1 = document.getElementById("resetPassword1")?.value || "";
+      const p2 = document.getElementById("resetPassword2")?.value || "";
+      if (p1 !== p2) {
+        err.textContent = "הסיסמאות אינן זהות";
+        return;
+      }
+      try {
+        await fetchJsonNoAuth("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ token, password: p1 }) });
+        history.replaceState({}, "", window.location.pathname);
+        document.getElementById("resetPasswordBlock")?.classList.add("hidden");
+        document.getElementById("loginBlock")?.classList.remove("hidden");
+        err.style.color = "var(--muted)";
+        err.textContent = "הסיסמה עודכנה. ניתן להתחבר.";
+      } catch (e) {
+        err.textContent = e.message || "שגיאה";
+      }
+    });
+
+    document.getElementById("btnWeatherPreview")?.addEventListener("click", () => refreshWeatherPreview().catch(() => {}));
+
+    document.getElementById("btnAuditEmail")?.addEventListener("click", async () => {
+      if (!isAdmin()) return;
+      try {
+        const r = await api("/api/admin/audit-log/email", { method: "POST", body: JSON.stringify({}) });
+        toast("נשלח לוג ל־" + (r.to || ""));
+      } catch (e) {
+        toast(e.message || "שליחה נכשלה");
+      }
+    });
+
+    document.getElementById("btnLogout").onclick = () => {
+      performLogout({});
+    };
+    document.getElementById("btnIdleStay").onclick = () => {
+      clearIdleGraceInterval();
+      hideIdleLogoutModal();
+      scheduleIdleLogoutTimer();
+    };
+
+    function fillElevatorScopeSelect(sel, value) {
+      sel.innerHTML = "";
+      const o0 = document.createElement("option");
+      o0.value = "";
+      o0.textContent = "כל המסכים";
+      sel.appendChild(o0);
+      (elevators || []).forEach((e) => {
+        const o = document.createElement("option");
+        o.value = e.id;
+        o.textContent = e.name;
+        sel.appendChild(o);
+      });
+      sel.value = value || "";
+    }
+
+    function syncNewUserScopeUi() {
+      const role = document.getElementById("newUserRole")?.value;
+      const wrap = document.getElementById("newUserScopeWrap");
+      const sel = document.getElementById("newUserElevatorScope");
+      if (!wrap || !sel) return;
+      const hide = role === "admin";
+      wrap.style.display = hide ? "none" : "";
+      if (hide) sel.value = "";
+    }
+
+    async function loadUsersPage() {
+      await loadElevators();
+      fillElevatorScopeSelect(document.getElementById("newUserElevatorScope"), "");
+      syncNewUserScopeUi();
+      await loadUsersList();
+    }
+
+    function navigateTo(view) {
+      currentView = view;
+      const ve = document.getElementById("viewElevators");
+      const vu = document.getElementById("viewUsers");
+      const vm = document.getElementById("viewMediaAdmin");
+      const va = document.getElementById("viewAudit");
+      const vs = document.getElementById("viewSettings");
+      const navE = document.getElementById("navElevators");
+      const navU = document.getElementById("navUsers");
+      const navM = document.getElementById("navAllMedia");
+      const navA = document.getElementById("navAudit");
+      const navS = document.getElementById("navSettings");
+      const sideSec = document.getElementById("sidebarElevatorSection");
+      const elLabel = document.getElementById("elevNavLabel");
+      if (view === "users") {
+        ve.classList.add("hidden");
+        vm.classList.add("hidden");
+        va?.classList.add("hidden");
+        vs?.classList.add("hidden");
+        vu.classList.remove("hidden");
+        navE?.classList.remove("active");
+        navM?.classList.remove("active");
+        navA?.classList.remove("active");
+        navS?.classList.remove("active");
+        navU?.classList.add("active");
+        sideSec?.classList.add("hidden");
+        if (elLabel) elLabel.style.display = "none";
+        loadUsersPage().catch((e) => toast(e.message || "שגיאה"));
+      } else if (view === "media") {
+        ve.classList.add("hidden");
+        vu.classList.add("hidden");
+        va?.classList.add("hidden");
+        vs?.classList.add("hidden");
+        vm.classList.remove("hidden");
+        navE?.classList.remove("active");
+        navU?.classList.remove("active");
+        navA?.classList.remove("active");
+        navS?.classList.remove("active");
+        navM?.classList.add("active");
+        sideSec?.classList.add("hidden");
+        if (elLabel) elLabel.style.display = "none";
+        loadMediaAdminPage().catch((e) => toast(e.message || "שגיאה"));
+      } else if (view === "audit") {
+        ve.classList.add("hidden");
+        vu.classList.add("hidden");
+        vm.classList.add("hidden");
+        vs?.classList.add("hidden");
+        va?.classList.remove("hidden");
+        navE?.classList.remove("active");
+        navU?.classList.remove("active");
+        navM?.classList.remove("active");
+        navS?.classList.remove("active");
+        navA?.classList.add("active");
+        sideSec?.classList.add("hidden");
+        if (elLabel) elLabel.style.display = "none";
+        auditOffset = 0;
+        loadAuditPage().catch((e) => toast(e.message || "שגיאה"));
+      } else if (view === "settings") {
+        ve.classList.add("hidden");
+        vu.classList.add("hidden");
+        vm.classList.add("hidden");
+        va?.classList.add("hidden");
+        vs?.classList.remove("hidden");
+        navE?.classList.remove("active");
+        navU?.classList.remove("active");
+        navM?.classList.remove("active");
+        navA?.classList.remove("active");
+        navS?.classList.add("active");
+        sideSec?.classList.add("hidden");
+        if (elLabel) elLabel.style.display = "none";
+        loadSettingsPage().catch((e) => toast(e.message || "שגיאה"));
+      } else {
+        vu.classList.add("hidden");
+        vm.classList.add("hidden");
+        va?.classList.add("hidden");
+        vs?.classList.add("hidden");
+        ve.classList.remove("hidden");
+        navU?.classList.remove("active");
+        navM?.classList.remove("active");
+        navA?.classList.remove("active");
+        navS?.classList.remove("active");
+        navE?.classList.add("active");
+        sideSec?.classList.remove("hidden");
+        if (elLabel) elLabel.style.display = "";
+      }
+      updateSidebarSubtitle();
+      try {
+        localStorage.setItem("pirsum_admin_view", view);
+      } catch (_) {}
+    }
+
+    function restoreNavViewAfterAuth() {
+      try {
+        const saved = localStorage.getItem("pirsum_admin_view");
+        if (isAdmin() && saved === "users") navigateTo("users");
+        else if (isAdmin() && saved === "media") navigateTo("media");
+        else if (isAdmin() && saved === "audit") navigateTo("audit");
+        else if (isAdmin() && saved === "settings") navigateTo("settings");
+        else navigateTo("elevators");
+      } catch (_) {
+        navigateTo("elevators");
+      }
+    }
+
+    document.getElementById("navElevators").onclick = () => navigateTo("elevators");
+    document.getElementById("navUsers").onclick = () => navigateTo("users");
+    document.getElementById("navAllMedia").onclick = () => navigateTo("media");
+    document.getElementById("navAudit")?.addEventListener("click", () => navigateTo("audit"));
+    document.getElementById("navSettings")?.addEventListener("click", () => navigateTo("settings"));
+
+    async function loadSettingsPage() {
+      if (!isAdmin()) return;
+      const data = await api("/api/admin/settings");
+      const s = data.smtp || {};
+      const host = document.getElementById("setSmtpHost");
+      const port = document.getElementById("setSmtpPort");
+      const secure = document.getElementById("setSmtpSecure");
+      const user = document.getElementById("setSmtpUser");
+      const pass = document.getElementById("setSmtpPass");
+      const from = document.getElementById("setMailFrom");
+      const passHint = document.getElementById("setSmtpPassHint");
+      const passClear = document.getElementById("setSmtpPassClear");
+      if (host) host.value = s.host || "";
+      if (port) port.value = s.port != null ? String(s.port) : "587";
+      if (secure) secure.checked = !!s.secure;
+      if (user) user.value = s.user || "";
+      if (pass) pass.value = "";
+      if (from) from.value = s.from || "";
+      if (passClear) passClear.checked = false;
+      if (passHint) {
+        passHint.textContent = s.smtpPassConfigured
+          ? "מוגדרת סיסמה (מהשרת). הזנת ערך חדש מחליפה; ריק = ללא שינוי."
+          : "לא הוגדרה סיסמה — השאר ריק אם אינך צריך אימות.";
+      }
+    }
+
+    document.getElementById("btnSettingsSave")?.addEventListener("click", async () => {
+      if (!isAdmin()) return;
+      const body = {
+        smtp: {
+          host: document.getElementById("setSmtpHost")?.value?.trim() || "",
+          port: document.getElementById("setSmtpPort")?.value,
+          secure: !!document.getElementById("setSmtpSecure")?.checked,
+          user: document.getElementById("setSmtpUser")?.value?.trim() || "",
+          from: document.getElementById("setMailFrom")?.value?.trim() || "",
+        },
+      };
+      const p = document.getElementById("setSmtpPass")?.value || "";
+      if (p) body.smtp.pass = p;
+      if (document.getElementById("setSmtpPassClear")?.checked) body.smtp.smtpPassClear = true;
+      try {
+        await api("/api/admin/settings", { method: "PUT", body: JSON.stringify(body) });
+        try {
+          authPublicConfig = await fetchJsonNoAuth("/api/auth/public-config");
+        } catch (_) {}
+        toast("ההגדרות נשמרו");
+        loadSettingsPage().catch(() => {});
+      } catch (e) {
+        toast(e.message || "שגיאה");
+      }
+    });
+
+    document.getElementById("btnSettingsMailTest")?.addEventListener("click", async () => {
+      if (!isAdmin()) return;
+      try {
+        const r = await api("/api/admin/settings/mail-test", { method: "POST", body: JSON.stringify({}) });
+        toast("נשלחה הודעת בדיקה ל־" + (r.to || ""));
+      } catch (e) {
+        toast(e.message || "שליחה נכשלה");
+      }
+    });
+
+    document.getElementById("btnSettingsResetDb")?.addEventListener("click", async () => {
+      if (!isAdmin()) return;
+      if (!confirm("לאפס את כל ערכי ה־SMTP השמורים בבסיס הנתונים ולחזור לערכי הסביבה?")) return;
+      try {
+        await api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ clearFromDatabase: true }) });
+        try {
+          authPublicConfig = await fetchJsonNoAuth("/api/auth/public-config");
+        } catch (_) {}
+        toast("הוגדרו מחדש לפי הסביבה");
+        loadSettingsPage().catch(() => {});
+      } catch (e) {
+        toast(e.message || "שגיאה");
+      }
+    });
+
+    async function loadAuditPage() {
+      const tbody = document.getElementById("auditTableBody");
+      const pill = document.getElementById("auditCountPill");
+      const info = document.getElementById("auditPageInfo");
+      const prev = document.getElementById("btnAuditPrev");
+      const next = document.getElementById("btnAuditNext");
+      if (!tbody) return;
+      const data = await api(
+        "/api/admin/audit-log?limit=" + AUDIT_PAGE_SIZE + "&offset=" + auditOffset,
+      );
+      const rows = data.rows || [];
+      const total = typeof data.total === "number" ? data.total : 0;
+      if (pill) pill.textContent = total + " רשומות";
+      const from = total === 0 ? 0 : auditOffset + 1;
+      const to = Math.min(auditOffset + rows.length, total);
+      if (info) {
+        info.textContent =
+          total === 0 ? "אין רשומות" : "מציג " + from + "–" + to + " מתוך " + total;
+      }
+      if (prev) prev.disabled = auditOffset <= 0;
+      if (next) next.disabled = total === 0 || auditOffset + AUDIT_PAGE_SIZE >= total;
+      tbody.innerHTML = "";
+      rows.forEach((r) => {
+        const tr = document.createElement("tr");
+        const tdTime = document.createElement("td");
+        tdTime.textContent = new Date(r.created_at).toLocaleString("he-IL", {
+          dateStyle: "short",
+          timeStyle: "medium",
+        });
+        const tdUser = document.createElement("td");
+        tdUser.textContent = r.actor_email || "—";
+        const tdAct = document.createElement("td");
+        tdAct.className = "audit-action-cell";
+        tdAct.textContent = r.action || r.path || "—";
+        const tdIp = document.createElement("td");
+        tdIp.style.fontSize = "0.85rem";
+        tdIp.textContent = r.ip || "—";
+        const tdDet = document.createElement("td");
+        tdDet.className = "audit-detail-cell";
+        let det = r.detail || "";
+        if (det.trim().startsWith("{")) {
+          try {
+            det = JSON.stringify(JSON.parse(det), null, 2);
+          } catch {
+            /* טקסט חופשי או פורמט ישן */
+          }
+        }
+        tdDet.textContent = det.trim() ? det : "—";
+        tr.appendChild(tdTime);
+        tr.appendChild(tdUser);
+        tr.appendChild(tdAct);
+        tr.appendChild(tdIp);
+        tr.appendChild(tdDet);
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("btnAuditPrev")?.addEventListener("click", () => {
+      auditOffset = Math.max(0, auditOffset - AUDIT_PAGE_SIZE);
+      loadAuditPage().catch((e) => toast(e.message || "שגיאה"));
+    });
+    document.getElementById("btnAuditNext")?.addEventListener("click", () => {
+      auditOffset += AUDIT_PAGE_SIZE;
+      loadAuditPage().catch((e) => toast(e.message || "שגיאה"));
+    });
+
+    async function loadMediaAdminPage() {
+      await loadElevators();
+      const rows = await api("/api/admin/all-media");
+      const tbody = document.getElementById("mediaAdminTableBody");
+      const pill = document.getElementById("mediaAdminCountPill");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      if (pill) pill.textContent = rows.length + " קבצים";
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        const tdElev = document.createElement("td");
+        tdElev.textContent = row.elevator_name || row.elevator_id;
+
+        const tdPrev = document.createElement("td");
+        tdPrev.className = "media-admin-preview-cell";
+        const wrap = document.createElement("div");
+        wrap.className = "media-admin-preview-wrap";
+        const ev = elevators.find((x) => x.id === row.elevator_id);
+        const previewUrl = ev && ev.token ? mediaUrlForItem(ev, row.filename) : "";
+        if (!previewUrl) {
+          const miss = document.createElement("span");
+          miss.className = "media-admin-preview-missing";
+          miss.textContent = "אין תצוגה";
+          wrap.appendChild(miss);
+        } else if (row.media_type === "video") {
+          const v = document.createElement("video");
+          v.src = previewUrl;
+          v.muted = true;
+          v.playsInline = true;
+          v.setAttribute("controls", "");
+          v.setAttribute("preload", "metadata");
+          v.setAttribute("title", row.filename);
+          v.onerror = () => {
+            wrap.innerHTML = "";
+            const miss = document.createElement("span");
+            miss.className = "media-admin-preview-missing";
+            miss.textContent = "לא ניתן לטעון וידאו";
+            wrap.appendChild(miss);
+          };
+          wrap.appendChild(v);
+        } else {
+          const im = document.createElement("img");
+          im.src = previewUrl;
+          im.alt = "";
+          im.loading = "lazy";
+          im.onerror = () => {
+            wrap.innerHTML = "";
+            const miss = document.createElement("span");
+            miss.className = "media-admin-preview-missing";
+            miss.textContent = "לא ניתן לטעון תמונה";
+            wrap.appendChild(miss);
+          };
+          wrap.appendChild(im);
+        }
+        tdPrev.appendChild(wrap);
+
+        const tdFile = document.createElement("td");
+        tdFile.className = "media-admin-filename";
+        tdFile.dir = "ltr";
+        tdFile.textContent = row.filename;
+        const tdType = document.createElement("td");
+        tdType.textContent = row.media_type === "video" ? "וידאו" : "תמונה";
+        const tdAct = document.createElement("td");
+        tdAct.className = "users-td-actions";
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "btn btn-danger ghost btn-sm";
+        del.textContent = "מחק מהשרת";
+        del.onclick = async () => {
+          if (!confirm("למחוק לצמיתות את הקובץ מהשרת?\n" + row.filename)) return;
+          try {
+            await api("/api/elevators/" + row.elevator_id + "/media/" + row.id, { method: "DELETE" });
+            await loadElevators();
+            await loadMediaAdminPage();
+            if (selectedId === row.elevator_id) selectElevator(selectedId);
+            toast("הקובץ נמחק מהשרת");
+          } catch (e) {
+            toast(e.message || "שגיאה");
+          }
+        };
+        tdAct.appendChild(del);
+        tr.appendChild(tdElev);
+        tr.appendChild(tdPrev);
+        tr.appendChild(tdFile);
+        tr.appendChild(tdType);
+        tr.appendChild(tdAct);
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function loadUsersList() {
+      const users = await api("/api/users");
+      const tbody = document.getElementById("usersTableBody");
+      const countEl = document.getElementById("usersCountPill");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      if (countEl) countEl.textContent = users.length + " משתמשים";
+      const myEmail = (localStorage.getItem("pirsum_user_email") || "").toLowerCase();
+      users.forEach((u) => {
+        const tr = document.createElement("tr");
+        const tdEmail = document.createElement("td");
+        const emailInp = document.createElement("input");
+        emailInp.type = "email";
+        emailInp.dir = "ltr";
+        emailInp.value = u.email;
+        emailInp.className = "user-email-inp";
+        tdEmail.appendChild(emailInp);
+
+        const tdRole = document.createElement("td");
+        const roleSel = document.createElement("select");
+        ["admin", "editor", "viewer"].forEach((r) => {
+          const opt = document.createElement("option");
+          opt.value = r;
+          opt.textContent = r === "admin" ? "מנהל" : r === "editor" ? "עורך" : "צופה";
+          if ((u.role || "admin") === r) opt.selected = true;
+          roleSel.appendChild(opt);
+        });
+        tdRole.appendChild(roleSel);
+
+        const tdScope = document.createElement("td");
+        const scopeSel = document.createElement("select");
+        scopeSel.className = "user-scope-select";
+        fillElevatorScopeSelect(scopeSel, u.allowed_elevator_id);
+        scopeSel.disabled = (u.role || "") === "admin";
+        roleSel.onchange = () => {
+          const isAdm = roleSel.value === "admin";
+          scopeSel.disabled = isAdm;
+          if (isAdm) scopeSel.value = "";
+        };
+        tdScope.appendChild(scopeSel);
+
+        const tdPass = document.createElement("td");
+        const passInp = document.createElement("input");
+        passInp.type = "password";
+        passInp.placeholder = "שינוי…";
+        passInp.autocomplete = "new-password";
+        passInp.style.maxWidth = "140px";
+        tdPass.appendChild(passInp);
+
+        const tdDate = document.createElement("td");
+        tdDate.className = "users-td-muted";
+        tdDate.textContent = new Date(u.created_at).toLocaleString("he-IL");
+
+        const tdAct = document.createElement("td");
+        const actWrap = document.createElement("div");
+        actWrap.className = "users-td-actions";
+        const saveBtn = document.createElement("button");
+        saveBtn.type = "button";
+        saveBtn.className = "btn btn-primary btn-sm";
+        saveBtn.textContent = "שמור";
+        saveBtn.onclick = async () => {
+          const body = { email: emailInp.value.trim(), role: roleSel.value };
+          if (body.role === "admin") body.allowed_elevator_id = null;
+          else body.allowed_elevator_id = scopeSel.value || null;
+          const pass = passInp.value.trim();
+          if (pass) body.password = pass;
+          try {
+            await api("/api/users/" + u.id, { method: "PATCH", body: JSON.stringify(body) });
+            await loadUsersList();
+            await loadMe();
+            applyRoleUi();
+            toast("המשתמש עודכן");
+          } catch (e) {
+            toast(e.message || "שגיאה");
+          }
+        };
+        actWrap.appendChild(saveBtn);
+        const canDelete = users.length > 1 && u.email.toLowerCase() !== myEmail;
+        if (canDelete) {
+          const del = document.createElement("button");
+          del.type = "button";
+          del.className = "btn btn-danger ghost btn-sm";
+          del.textContent = "מחק";
+          del.onclick = async () => {
+            if (!confirm("למחוק את " + u.email + "?")) return;
+            try {
+              await api("/api/users/" + u.id, { method: "DELETE" });
+              await loadUsersList();
+              toast("נמחק");
+            } catch (e) {
+              toast(e.message || "שגיאה");
+            }
+          };
+          actWrap.appendChild(del);
+        }
+        tdAct.appendChild(actWrap);
+
+        tr.appendChild(tdEmail);
+        tr.appendChild(tdRole);
+        tr.appendChild(tdScope);
+        tr.appendChild(tdPass);
+        tr.appendChild(tdDate);
+        tr.appendChild(tdAct);
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("newUserRole").addEventListener("change", syncNewUserScopeUi);
+
+    document.getElementById("btnAddUser").onclick = async () => {
+      const email = document.getElementById("newUserEmail").value.trim();
+      const password = document.getElementById("newUserPassword").value;
+      const role = document.getElementById("newUserRole").value;
+      const scopeEl = document.getElementById("newUserElevatorScope");
+      const allowed_elevator_id = role === "admin" ? null : (scopeEl?.value || null);
+      try {
+        await api("/api/users", {
+          method: "POST",
+          body: JSON.stringify({ email, password, role, allowed_elevator_id }),
+        });
+        document.getElementById("newUserEmail").value = "";
+        document.getElementById("newUserPassword").value = "";
+        document.getElementById("newUserRole").value = "editor";
+        if (scopeEl) scopeEl.value = "";
+        syncNewUserScopeUi();
+        await loadUsersList();
+        toast("משתמש נוסף");
+      } catch (e) {
+        toast(e.message || "שגיאה");
+      }
+    };
+
+    document.getElementById("sidebarSearch").addEventListener("input", applyElevatorFilter);
+
+    document.getElementById("btnCreate").onclick = async () => {
+      const name = document.getElementById("newName").value.trim();
+      if (!name) return;
+      await api("/api/elevators", { method: "POST", body: JSON.stringify({ name }) });
+      document.getElementById("newName").value = "";
+      await loadElevators();
+      toast("מעלית נוצרה");
+    };
+
+    document.getElementById("btnCopyToken").onclick = async () => {
+      const t = document.getElementById("detailToken").textContent;
+      try {
+        await navigator.clipboard.writeText(t);
+        toast("הועתק ללוח");
+      } catch {
+        toast("העתק ידנית");
+      }
+    };
+
+    document.getElementById("btnPlayerUrlDefault").onclick = () => {
+      const el = document.getElementById("playerBaseUrlHint");
+      if (!el) return;
+      el.value = DEFAULT_PLAYER_SERVER_URL;
+      localStorage.setItem(STORAGE_PLAYER_BASE_URL, DEFAULT_PLAYER_SERVER_URL);
+      toast("הוחזר לברירת מחדל");
+    };
+
+    document.getElementById("btnPlayerUrlClear").onclick = () => {
+      const el = document.getElementById("playerBaseUrlHint");
+      if (!el) return;
+      el.value = "";
+      localStorage.setItem(STORAGE_PLAYER_BASE_URL, "");
+      toast("הכתובת נמחקה מהשדה");
+    };
+
+    document.getElementById("playerBaseUrlHint").addEventListener("change", persistPlayerBaseUrl);
+    document.getElementById("playerBaseUrlHint").addEventListener("blur", persistPlayerBaseUrl);
+
+    document.getElementById("btnPickFile").onclick = () => document.getElementById("fFile").click();
+    document.getElementById("fFile").onchange = () => {
+      document.getElementById("btnUploadMedia").disabled =
+        !document.getElementById("fFile").files?.length || isViewer();
+    };
+
+    document.getElementById("btnPickLogo").onclick = () => document.getElementById("fLogoFile").click();
+    document.getElementById("fLogoFile").onchange = () => {
+      document.getElementById("btnUploadLogo").disabled =
+        !document.getElementById("fLogoFile").files?.length || isViewer();
+    };
+
+    document.getElementById("btnUploadLogo").onclick = async () => {
+      if (!selectedId || isViewer()) return;
+      const f = document.getElementById("fLogoFile").files?.[0];
+      if (!f) return;
+      try {
+        const fd = new FormData();
+        fd.append("file", f);
+        const headers = { Authorization: "Bearer " + accessToken };
+        const r = await fetch("/api/elevators/" + selectedId + "/logo", { method: "POST", headers, body: fd });
+        const text = await r.text();
+        let data;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch {
+          data = null;
+        }
+        if (!r.ok) {
+          toast(data?.error || "העלאת לוגו נכשלה");
+          return;
+        }
+        document.getElementById("fLogoFile").value = "";
+        document.getElementById("btnUploadLogo").disabled = true;
+        await loadElevators();
+        selectElevator(selectedId);
+        toast("נשמר — הנגן יתעדכן מיד");
+      } catch (e) {
+        toast(e.message || "שגיאת רשת");
+      }
+    };
+
+    document.getElementById("btnDeleteLogo").onclick = async () => {
+      if (!selectedId || isViewer()) return;
+      if (!confirm("להסיר את הלוגו מהמסך?")) return;
+      try {
+        await api("/api/elevators/" + selectedId + "/logo", { method: "DELETE" });
+        await loadElevators();
+        selectElevator(selectedId);
+        toast("הלוגו הוסר");
+      } catch (e) {
+        toast(e.message || "שגיאה");
+      }
+    };
+
+    document.getElementById("btnPickClientDownload")?.addEventListener("click", () => {
+      document.getElementById("fClientDownload")?.click();
+    });
+    document.getElementById("fClientDownload")?.addEventListener("change", () => {
+      const file = document.getElementById("fClientDownload")?.files?.[0];
+      const lbl = document.getElementById("clientDownloadLabel");
+      const btn = document.getElementById("btnUploadClientDownload");
+      if (lbl) lbl.textContent = file ? file.name : "";
+      if (btn) btn.disabled = !file || !isAdmin();
+    });
+    document.getElementById("btnUploadClientDownload")?.addEventListener("click", async () => {
+      if (!isAdmin()) return;
+      const fInp = document.getElementById("fClientDownload");
+      const file = fInp?.files?.[0];
+      const btn = document.getElementById("btnUploadClientDownload");
+      if (!file || !btn) return;
+      btn.disabled = true;
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const r = await fetch("/api/admin/client-downloads", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + accessToken },
+          body: fd,
+        });
+        const text = await r.text();
+        let data;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch {
+          data = null;
+        }
+        if (!r.ok) {
+          toast(data?.error || "העלאה נכשלה");
+          return;
+        }
+        fInp.value = "";
+        document.getElementById("clientDownloadLabel").textContent = "";
+        toast("הקובץ עלה לשרת");
+        await loadClientDownloads();
+      } catch (e) {
+        toast(e.message || "שגיאת רשת");
+      } finally {
+        btn.disabled = !fInp?.files?.length || !isAdmin();
+      }
+    });
+
+    document.getElementById("btnPickBg").onclick = () => document.getElementById("fBgFile").click();
+    document.getElementById("fBgFile").onchange = () => {
+      document.getElementById("btnUploadBg").disabled =
+        !document.getElementById("fBgFile").files?.length || isViewer();
+    };
+
+    document.getElementById("btnUploadBg").onclick = async () => {
+      if (!selectedId || isViewer()) return;
+      const f = document.getElementById("fBgFile").files?.[0];
+      if (!f) return;
+      try {
+        const fd = new FormData();
+        fd.append("file", f);
+        const headers = { Authorization: "Bearer " + accessToken };
+        const r = await fetch("/api/elevators/" + selectedId + "/background", { method: "POST", headers, body: fd });
+        const text = await r.text();
+        let data;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch {
+          data = null;
+        }
+        if (!r.ok) {
+          toast(data?.error || "העלאת רקע נכשלה");
+          return;
+        }
+        document.getElementById("fBgFile").value = "";
+        document.getElementById("btnUploadBg").disabled = true;
+        await loadElevators();
+        selectElevator(selectedId);
+        toast("רקע נשמר — נגן V2 יתעדכן");
+      } catch (e) {
+        toast(e.message || "שגיאת רשת");
+      }
+    };
+
+    document.getElementById("btnDeleteBg").onclick = async () => {
+      if (!selectedId || isViewer()) return;
+      if (!confirm("להסיר את רקע המסך?")) return;
+      try {
+        await api("/api/elevators/" + selectedId + "/background", { method: "DELETE" });
+        await loadElevators();
+        selectElevator(selectedId);
+        toast("הרקע הוסר");
+      } catch (e) {
+        toast(e.message || "שגיאה");
+      }
+    };
+
+    document.getElementById("btnUploadMedia").onclick = async () => {
+      if (!selectedId) return;
+      const files = document.getElementById("fFile").files;
+      if (!files?.length) return;
+      const btn = document.getElementById("btnUploadMedia");
+      const pick = document.getElementById("btnPickFile");
+      const fd = new FormData();
+      for (let i = 0; i < files.length; i++) fd.append("files", files[i]);
+      updateMediaUploadProgressUI(0);
+      btn.disabled = true;
+      if (pick) pick.disabled = true;
+      try {
+        const url = "/api/elevators/" + selectedId + "/media";
+        await postFormDataWithUploadProgress(url, fd, accessToken, (p) => updateMediaUploadProgressUI(p));
+        updateMediaUploadProgressUI(100);
+        await new Promise((r) => setTimeout(r, 220));
+        hideMediaUploadProgressUI();
+        document.getElementById("fFile").value = "";
+        await loadElevators();
+        selectElevator(selectedId);
+        toast("נוסף לפלייליסט — הנגן יתעדכן מיד");
+      } catch (e) {
+        hideMediaUploadProgressUI();
+        toast(e.message || "שגיאת רשת");
+      } finally {
+        if (pick) pick.disabled = isViewer();
+        btn.disabled = !document.getElementById("fFile").files?.length || isViewer();
+      }
+    };
+
+    document.getElementById("btnDeleteAllMedia").onclick = async () => {
+      if (!selectedId) return;
+      if (!confirm("למחוק את כל קבצי המדיה מהפלייליסט?")) return;
+      await api("/api/elevators/" + selectedId + "/media", { method: "DELETE" });
+      previewMediaId = null;
+      await loadElevators();
+      selectElevator(selectedId);
+      toast("כל המדיה נמחקה");
+    };
+
+    document.getElementById("btnSave").onclick = async () => {
+      if (!selectedId) return;
+      const body = {
+        name: document.getElementById("fName").value.trim(),
+        rss_url: document.getElementById("fRss").value.trim(),
+        side_ticker_text: document.getElementById("fSide").value,
+        rss_ticker_text: document.getElementById("fRssText").value,
+        latitude: parseFloat(document.getElementById("fLat").value) || 32.0853,
+        longitude: parseFloat(document.getElementById("fLon").value) || 34.7818,
+        city_label: document.getElementById("fCity").value.trim() || "תל אביב",
+        header_phone: document.getElementById("fHeaderPhone").value.trim(),
+        exit_password: document.getElementById("fExitPassword").value.trim() || "12345",
+        rss_track_duration_sec: parseInt(document.getElementById("fRssDur").value, 10) || 48,
+        side_ticker_duration_sec: parseInt(document.getElementById("fSideDur").value, 10) || 150,
+        font_clock_time_px: parseInt(document.getElementById("fFontClockTime").value, 10) || 24,
+        font_clock_date_px: parseInt(document.getElementById("fFontClockDate").value, 10) || 14,
+        font_weather_px: parseInt(document.getElementById("fFontWeather").value, 10) || 16,
+        font_brand_px: parseInt(document.getElementById("fFontBrand").value, 10) || 20,
+        logo_max_height_px: parseInt(document.getElementById("fLogoMaxH").value, 10) || 48,
+        font_side_ticker_px: parseInt(document.getElementById("fFontSide").value, 10) || 14,
+        font_rss_px: parseInt(document.getElementById("fFontRss").value, 10) || 15,
+        media_scale_percent: parseInt(document.getElementById("fMediaScale").value, 10) || 100,
+      };
+      await api("/api/elevators/" + selectedId, { method: "PATCH", body: JSON.stringify(body) });
+      await loadElevators();
+      selectElevator(selectedId);
+      toast("נשמר — הנגן יתעדכן מיד");
+    };
+
+    document.getElementById("btnDeleteElev").onclick = async () => {
+      if (!selectedId || !confirm("למחוק את המעלית לחלוטין?")) return;
+      await api("/api/elevators/" + selectedId, { method: "DELETE" });
+      selectedId = null;
+      document.getElementById("detailWrap").classList.add("hidden");
+      document.getElementById("emptyMain").classList.remove("hidden");
+      await loadElevators();
+      toast("נמחק");
+    };
+
+    setInterval(() => {
+      if (!accessToken) return;
+      const appEl = document.getElementById("app");
+      if (appEl && !appEl.classList.contains("hidden")) {
+        loadElevators().catch(() => {});
+      }
+    }, 30000);
+
+    bindIdleActivityListeners();
+
+    initWeatherCityPresets();
+
+    (async function init() {
+      await loadAuthPublicConfig();
+      initGoogleSignIn();
+      const urlReset = new URLSearchParams(window.location.search).get("reset");
+      if (urlReset && !accessToken) {
+        document.getElementById("authWrap")?.classList.remove("hidden");
+        document.getElementById("loginPanel")?.classList.remove("hidden");
+        document.getElementById("app")?.classList.add("hidden");
+        document.getElementById("loginBlock")?.classList.add("hidden");
+        document.getElementById("setupBlock")?.classList.add("hidden");
+        document.getElementById("resetPasswordBlock")?.classList.remove("hidden");
+        const tf = document.getElementById("resetTokenField");
+        if (tf) tf.value = urlReset;
+        try {
+          const st = await fetchJsonNoAuth("/api/auth/status");
+          showLoginMode(st.needsSetup);
+        } catch {
+          showLoginMode(false);
+        }
+        return;
+      }
+      try {
+        const st = await fetchJsonNoAuth("/api/auth/status");
+        if (st.needsSetup) {
+          showLoginMode(true);
+          showLogin();
+          initGoogleSignIn();
+          return;
+        }
+        showLoginMode(false);
+      } catch {
+        showLoginMode(false);
+      }
+      if (accessToken) {
+        try {
+          await api("/api/elevators");
+          await loadMe();
+          showApp();
+          await loadElevators();
+          applyRoleUi();
+          restoreNavViewAfterAuth();
+          initGoogleSignIn();
+        } catch {
+          accessToken = "";
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(STORAGE_ROLE_KEY);
+          localStorage.removeItem(STORAGE_SCOPE_KEY);
+          showLogin();
+          initGoogleSignIn();
+        }
+      } else {
+        showLogin();
+        initGoogleSignIn();
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+# Render Blueprint: דיסק קבוע — הנתונים נשמרים בין דיפלויים.
+# https://render.com/docs/disks
+#
+# אחרי חיבור הדיסק, DATA_DIR חייב להתאים ל-mountPath (כאן: /data).
+#
+# משתנים עם sync: false — מופיעים בלוח Render כשדות ריקים; יש למלא ב-Dashboard
+# (או ב-Environment Group) לפני/אחרי דיפלוי. לא נשמרים בגיט.
+#
+# JWT_SECRET — חובה בפרודקשן (אסימוני התחברות לממשק).
+# PUBLIC_BASE_URL — כתובת ציבורית מלאה של השירות (קישורי איפוס סיסמה, מדיה).
+# SMTP_* / MAIL_FROM — אופציונלי: איפוס סיסמה במייל, מייל משתמש חדש, לוג פעולות.
+# GOOGLE_CLIENT_ID — אופציונלי: כפתור «המשך עם Google» במסך ההתחברות.
+services:
+  - type: web
+    name: lift
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /data
+      - key: CLIENT_DOWNLOADS_DIR
+        value: /data/client-downloads
+      - key: PUBLIC_BASE_URL
+        value: https://lift.s-tech.co.il
+      - key: ENFORCE_HTTPS
+        value: "true"
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+    disk:
+      name: lift-data
+      mountPath: /data
+      sizeGB: 1

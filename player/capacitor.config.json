@@ -1,0 +1,14 @@
+{
+  "appId": "com.stechil.pirsumplayer",
+  "appName": "Pirsum",
+  "webDir": "www",
+  "android": {},
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

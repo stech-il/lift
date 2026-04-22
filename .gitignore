@@ -1,0 +1,11 @@
+node_modules/
+server/data/
+server/uploads/
+*.log
+.DS_Store
+
+# Windows / Electron build output (מ installers — גדולים ל־Git)
+player-v2/dist/
+
+# תיקיות גיבוי "עותק" (לא לכלול בקומיט; נשארות מקומית בלבד)
+*עותק*/

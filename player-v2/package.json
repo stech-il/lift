@@ -1,0 +1,60 @@
+{
+  "name": "pirsum-player-v2",
+  "version": "1.0.0",
+  "description": "נגן מסכי מעליות — פריסה אופקית (V2)",
+  "author": "S-Tech",
+  "private": true,
+  "main": "electron-main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --enable-logging",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win --x64"
+  },
+  "dependencies": {
+    "@capacitor/android": "5.7.8",
+    "@capacitor/app": "5.0.8",
+    "@capacitor/core": "5.7.8",
+    "@capacitor/status-bar": "5.0.8"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "5.7.8",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "il.stech.pirsum.player.v2",
+    "productName": "Pirsum Player V2",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!android",
+      "!android/**",
+      "!dist",
+      "!dist/**",
+      "!node_modules/@capacitor/**"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Pirsum Player V2"
+    }
+  }
+}
