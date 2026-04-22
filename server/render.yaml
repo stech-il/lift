@@ -10,10 +10,13 @@
 # PUBLIC_BASE_URL — כתובת ציבורית מלאה של השירות (קישורי איפוס סיסמה, מדיה).
 # SMTP_* / MAIL_FROM — אופציונלי: איפוס סיסמה במייל, מייל משתמש חדש, לוג פעולות.
 # GOOGLE_CLIENT_ID — אופציונלי: כפתור «המשך עם Google» במסך ההתחברות.
+#
+# monorepo: build/run מתוך server/ (גם render.yaml כפולה בשורש).
 services:
   - type: web
     name: lift
     runtime: node
+    rootDir: server
     buildCommand: npm install
     startCommand: npm start
     envVars:
