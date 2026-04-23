@@ -1237,7 +1237,7 @@
           <button type="button" id="btnToggleForgot" class="btn btn-ghost btn-sm" style="padding:0.2rem 0.4rem;font-size:inherit;">שכחתי סיסמה</button>
         </p>
         <div id="forgotPasswordBlock" class="hidden" style="margin-top:0.85rem;padding:0.85rem;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface-input);">
-          <p class="field-hint" style="margin:0 0 0.5rem;">יישלח קישור לאיפוס לכתובת האימייל (דורש הגדרת SMTP בשרת).</p>
+          <p class="field-hint" style="margin:0 0 0.5rem;">יישלח קישור לאיפוס לכתובת האימייל (הקישור בתוקף 5 דקות; דורש הגדרת SMTP בשרת).</p>
           <label class="field-label" for="forgotEmail">אימייל</label>
           <input id="forgotEmail" type="email" dir="ltr" autocomplete="off" placeholder="אותה כתובת כמו בהתחברות" />
           <div style="margin-top:0.65rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
@@ -1866,7 +1866,7 @@
       const hint = document.querySelector("#forgotPasswordBlock .field-hint");
       if (hint) {
         hint.textContent = authPublicConfig.mailConfigured
-          ? "יישלח קישור לאיפוס לכתובת האימייל (דורש הגדרת SMTP בשרת — כבר מוגדר)."
+          ? "יישלח קישור לאיפוס לכתובת האימייל (הקישור בתוקף 5 דקות; SMTP מוגדר בשרת)."
           : "בשרת לא הוגדר SMTP — הגדר SMTP_HOST, MAIL_FROM (ואופציונלית SMTP_USER/SMTP_PASS) כדי לאפשר איפוס סיסמה במייל.";
       }
     }

@@ -705,14 +705,15 @@ app.post("/api/auth/forgot-password", async (req, res) => {
   }
   const raw = randomBytes(32).toString("hex");
   const tokenHash = hashPasswordResetToken(raw);
-  const expires = Date.now() + 60 * 60 * 1000;
+  const passwordResetTtlMin = 5;
+  const expires = Date.now() + passwordResetTtlMin * 60 * 1000;
   insertPasswordReset(row.id, tokenHash, expires);
   const base = publicOrigin(req);
   const link = `${base}/admin/?reset=${encodeURIComponent(raw)}`;
   const sent = await sendMail({
     to: email,
     subject: "איפוס סיסמה — Pirsum",
-    text: `שלום,\n\nנפתחה בקשה לאיפוס הסיסמה לממשק הניהול.\n\nלחץ על הקישור (בתוקף שעה אחת):\n${link}\n\nאם לא ביקשת — התעלם מהודעה זו.\n`,
+    text: `שלום,\n\nנפתחה בקשה לאיפוס הסיסמה לממשק הניהול.\n\nלחץ על הקישור (הקישור בתוקף ${passwordResetTtlMin} דקות בלבד):\n${link}\n\nאם לא ביקשת — התעלם מהודעה זו.\n`,
   });
   if (!sent.ok) console.warn("forgot-password mail failed", sent.error);
   res.json(okMsg);
