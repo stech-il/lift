@@ -335,6 +335,92 @@ export function deleteElevator(id) {
   db.prepare(`DELETE FROM elevators WHERE id = ?`).run(id);
 }
 
+function copyUploadFileIfExists(sourceDir, destDir, filename) {
+  if (filename == null) return;
+  const base = String(filename).trim();
+  if (!base) return;
+  const b = path.basename(base);
+  const from = path.join(sourceDir, b);
+  const to = path.join(destDir, b);
+  if (!fs.existsSync(from)) return;
+  fs.mkdirSync(path.dirname(to), { recursive: true });
+  fs.copyFileSync(from, to);
+}
+
+/**
+ * שכפול מתקן: הגדרות (טוקן חדש) + מדיה ולוגואים – קבצים מועתקים לתיקיית היעד.
+ * @param {string} sourceId
+ * @param {{ name?: string | null, uploadsRoot: string }} opts
+ */
+export function duplicateElevator(sourceId, { name, uploadsRoot } = {}) {
+  if (!uploadsRoot || typeof uploadsRoot !== "string") {
+    throw new Error("uploadsRoot required");
+  }
+  const src = getElevatorById(sourceId);
+  if (!src) return null;
+  const nameTrim = name != null ? String(name).trim() : "";
+  const newName = nameTrim
+    ? nameTrim.slice(0, 200)
+    : `${String(src.name || "מתקן").trim()} (העתק)`.slice(0, 200);
+
+  let n = null;
+  try {
+    n = createElevator({ name: newName });
+    const newId = n.id;
+    const fields = {
+      name: newName,
+      rss_url: src.rss_url,
+      latitude: src.latitude,
+      longitude: src.longitude,
+      city_label: src.city_label,
+      side_ticker_text: src.side_ticker_text,
+      rss_ticker_text: src.rss_ticker_text,
+      exit_password: src.exit_password,
+      rss_track_duration_sec: src.rss_track_duration_sec,
+      side_ticker_duration_sec: src.side_ticker_duration_sec,
+      logo_filename: src.logo_filename,
+      background_filename: src.background_filename,
+      header_phone: src.header_phone,
+      logo_left_filename: src.logo_left_filename,
+      font_clock_time_px: src.font_clock_time_px,
+      font_clock_date_px: src.font_clock_date_px,
+      font_weather_px: src.font_weather_px,
+      font_brand_px: src.font_brand_px,
+      logo_max_height_px: src.logo_max_height_px,
+      font_side_ticker_px: src.font_side_ticker_px,
+      font_rss_px: src.font_rss_px,
+      media_scale_percent: src.media_scale_percent,
+    };
+    updateElevator(newId, fields);
+    const srcU = path.join(uploadsRoot, sourceId);
+    const dstU = path.join(uploadsRoot, newId);
+    fs.mkdirSync(dstU, { recursive: true });
+    for (const fn of [src.logo_filename, src.background_filename, src.logo_left_filename]) {
+      copyUploadFileIfExists(srcU, dstU, fn);
+    }
+    const mediaList = listMediaForElevator(sourceId);
+    for (const m of mediaList) {
+      const b = path.basename(m.filename);
+      copyUploadFileIfExists(srcU, dstU, b);
+      addMediaForElevator(newId, b, m.media_type);
+    }
+    const row = getElevatorById(newId);
+    row.media = listMediaForElevator(newId);
+    return row;
+  } catch (e) {
+    if (n?.id) {
+      try {
+        deleteElevator(n.id);
+        const dir = path.join(uploadsRoot, n.id);
+        fs.rmSync(dir, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
+    }
+    throw e;
+  }
+}
+
 export function addMediaForElevator(elevatorId, filename, mediaType) {
   const maxRow = db.prepare(`SELECT COALESCE(MAX(sort_order), -1) as m FROM elevator_media WHERE elevator_id = ?`).get(elevatorId);
   const sort = maxRow.m + 1;

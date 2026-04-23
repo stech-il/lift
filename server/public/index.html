@@ -1352,6 +1352,7 @@
                 <h1 class="cms-page-title" id="detailTitle">מתקן</h1>
               </div>
               <div class="cms-header-actions">
+                <button type="button" class="btn btn-ghost" id="btnDuplicateElev" title="יוצר עותק עם אותן הגדרות, מדיה ולוגואים; טוקן נגן חדש">שכפל מתקן</button>
                 <button type="button" class="btn btn-danger ghost" id="btnDeleteElev">מחק מתקן</button>
                 <button type="button" class="btn btn-primary" id="btnSave">שמור שינויים</button>
               </div>
@@ -2076,6 +2077,7 @@
       document.getElementById("rowNewElev")?.classList.toggle("hidden", viewer || scoped);
       document.getElementById("btnSave")?.classList.toggle("hidden", viewer);
       document.getElementById("btnDeleteElev")?.classList.toggle("hidden", viewer || scoped);
+      document.getElementById("btnDuplicateElev")?.classList.toggle("hidden", viewer || scoped);
       document.querySelector(".search-wrap")?.classList.toggle("hidden", scoped);
       ["btnPickFile", "btnUploadMedia", "btnDeleteAllMedia", "btnPickLogo", "btnUploadLogo", "btnDeleteLogo"].forEach((id) => {
         const el = document.getElementById(id);
@@ -3775,6 +3777,26 @@
       await loadElevators();
       selectElevator(selectedId);
       toast("נשמר — הנגן יתעדכן מיד");
+    };
+
+    document.getElementById("btnDuplicateElev").onclick = async () => {
+      if (!selectedId) return;
+      const e = elevators.find((x) => x.id === selectedId);
+      if (!e) return;
+      const def = (e.name || "מתקן") + " (העתק)";
+      const entered = window.prompt("שם למתקן המשוכפל (ריק = ברירת מחדל):", def);
+      if (entered === null) return;
+      if (!confirm("לשכפל את «" + (e.name || "מתקן") + "»? יועתקו הגדרות, מדיה ולוגואים. יווצר טוקן נגן חדש.")) return;
+      const name = String(entered).trim();
+      try {
+        const body = name ? JSON.stringify({ name }) : JSON.stringify({});
+        const row = await api("/api/elevators/" + selectedId + "/duplicate", { method: "POST", body });
+        await loadElevators();
+        if (row && row.id) selectElevator(row.id);
+        toast("המתקן שוכפל");
+      } catch (err) {
+        toast(err.message || "שגיאה");
+      }
     };
 
     document.getElementById("btnDeleteElev").onclick = async () => {

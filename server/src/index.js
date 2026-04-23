@@ -21,6 +21,7 @@ import {
   mediaBelongsToElevator,
   reorderMediaForElevator,
   deleteAllMediaForElevator,
+  duplicateElevator,
   touchLastSeen,
   countUsers,
   createUser,
@@ -285,6 +286,7 @@ function buildAuditActionHebrew(req) {
   if (p === "/api/elevators" && m === "POST") return "יצירת מתקן (מסך) חדש";
   if (m === "PATCH" && /^\/api\/elevators\/[^/]+$/.test(p)) return "עדכון הגדרות מתקן";
   if (m === "DELETE" && /^\/api\/elevators\/[^/]+$/.test(p)) return "מחיקת מתקן";
+  if (m === "POST" && /^\/api\/elevators\/[^/]+\/duplicate$/.test(p)) return "שכפול מתקן (מסך)";
   if (m === "POST" && /^\/api\/elevators\/[^/]+\/media$/.test(p)) return "העלאת קבצי מדיה למתקן";
   if (m === "DELETE" && /^\/api\/elevators\/[^/]+\/media$/.test(p)) return "מחיקת כל קבצי המדיה במתקן";
   if (m === "DELETE" && /^\/api\/elevators\/[^/]+\/media\/[^/]+$/.test(p)) return "מחיקת פריט מדיה מהפלייליסט";
@@ -371,6 +373,9 @@ function buildAuditDetailHebrew(req) {
   if (sb) {
     if (p === "/api/elevators" && req.method === "POST" && sb.name) {
       parts.push(`שם המתקן: ${sb.name}`);
+    }
+    if (req.method === "POST" && /^\/api\/elevators\/[^/]+\/duplicate$/.test(p) && sb && sb.name != null && String(sb.name).trim() !== "") {
+      parts.push(`שם לעותק: ${String(sb.name).trim()}`);
     }
     if (p === "/api/users" && req.method === "POST") {
       parts.push(...describeUserBodyFields(sb));
@@ -1007,6 +1012,23 @@ app.post("/api/elevators", adminAuth, requireElevatorEdit, (req, res) => {
   if (!name) return res.status(400).json({ error: "name required" });
   const row = createElevator({ name });
   res.status(201).json(row);
+});
+
+app.post("/api/elevators/:id/duplicate", adminAuth, requireElevatorAccess, requireElevatorEdit, (req, res) => {
+  if (getScopedElevatorId(req)) return res.status(403).json({ error: "אין הרשאה לשכפל מתקן" });
+  const sourceId = req.params.id;
+  if (!getElevatorById(sourceId)) return res.status(404).json({ error: "not found" });
+  const nameRaw = req.body?.name;
+  const name = nameRaw != null && String(nameRaw).trim() !== "" ? String(nameRaw).trim() : null;
+  try {
+    const row = duplicateElevator(sourceId, { name, uploadsRoot });
+    if (!row) return res.status(404).json({ error: "not found" });
+    notifyElevator(row.id, { reason: "config" });
+    res.status(201).json(row);
+  } catch (e) {
+    console.error("duplicateElevator", e);
+    res.status(500).json({ error: "שכפול המתקן נכשל" });
+  }
 });
 
 function clampInt(v, min, max, fallback) {
