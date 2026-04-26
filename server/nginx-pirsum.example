@@ -1,0 +1,12 @@
+# הדבק/מזג ב־server { } או ב־location { } שמעביר ל־Pirsum (Node):
+#   fix HTTP 413 Request Entity Too Large on backup restore (ZIP)
+#
+# אחרי שינוי: sudo nginx -t && sudo nginx -s reload
+
+client_max_body_size 200m;
+
+# שחזור מדיה גדול עלול לקחת דקות — הימנע מניתוק מוקדם
+proxy_read_timeout 600s;
+proxy_send_timeout 600s;
+send_timeout 600s;
+client_body_timeout 600s;

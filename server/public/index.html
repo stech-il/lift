@@ -1940,6 +1940,9 @@
                 <p class="field-hint" style="margin:0 0 0.65rem;">
                   לשחזור ידני: חילוץ ה־ZIP והעתקה ל־<code>DATA_DIR</code> / <code>UPLOADS_DIR</code> / <code>CLIENT_DOWNLOADS_DIR</code>. בדומיין חדש: <code>PUBLIC_BASE_URL</code> ו־<strong>Authorized JavaScript origins</strong> ב־Google Cloud.
                 </p>
+                <p class="field-hint" style="margin:0 0 0.65rem;padding:0.5rem 0.65rem;border-radius:8px;border:1px solid var(--border);background:var(--surface-input);">
+                  אם בזמן שחזור מופיע <strong>HTTP 413</strong> — הדפדפן אינו שולח ל־Node אלא היישום נמצא מאחורי <strong>nginx</strong> (או reverse proxy) עם <code>client_max_body_size</code> נמוך. יש להגדיל (למשל 200m) ב־<code>server</code> / <code>location</code> ולהפעיל מחדש את nginx, ורצוי גם <code>proxy_read_timeout</code> ארוך. קובץ דוגמה: <code>server/nginx-pirsum.example</code> במאגר.
+                </p>
                 <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
                   <button type="button" class="btn btn-primary" id="btnBackupFullDownload" title="הורדה למחשב — דורש מנהל מערכת">הורד גיבוי מלא (ZIP)</button>
                   <input type="file" id="fBackupRestore" class="file-input" accept=".zip,application/zip" />
@@ -3588,8 +3591,14 @@
             j = null;
           }
           if (xhr.status < 200 || xhr.status >= 300) {
-            const err = (j && j.error) || t.slice(0, 500) || "שחזור נכשל";
             appendRestoreLogLine("תשובה שגויה: HTTP " + xhr.status);
+            if (xhr.status === 413) {
+              appendRestoreLogLine(
+                "הקובץ נדחה לפי גודל: לרוב הפרוקסי (nginx) מגביל גוף בקשה. יש לערוך את תצורת nginx ולעלות: client_max_body_size (לדוגמה 200m) ואז nginx -s reload. ראו server/nginx-pirsum.example. אפשר בינתיים לשחזר ידנית (העתקה ל־DATA_DIR)."
+              );
+              return reject(new Error("413: מגבלת גודל (nginx) — עבור ל־client_max_body_size"));
+            }
+            const err = (j && j.error) || t.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 500) || "שחזור נכשל";
             appendRestoreLogLine(String(err).slice(0, 2000));
             return reject(new Error(String(err).slice(0, 200)));
           }
