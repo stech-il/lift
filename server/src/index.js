@@ -67,6 +67,14 @@ import {
 } from "./weather.js";
 import { sendMail, isMailConfigured, getEffectiveSmtpForAdmin, resetMailTransporter, SMTP_KEYS } from "./mail.js";
 import { verifyGoogleIdToken, getGoogleClientId } from "./googleAuth.js";
+import { appendPirsumBackupToArchive } from "./backupZip.js";
+import {
+  getAutoBackupForAdmin,
+  saveAutoBackupFromRequest,
+  startAutoBackupScheduler,
+  restartAutoBackupScheduler,
+  runAutoBackupFtpJob,
+} from "./autoBackupFtp.js";
 
 function hashPasswordResetToken(token) {
   const secret = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "change-me-in-production";
@@ -928,6 +936,7 @@ app.get("/api/admin/settings", adminAuth, requireAdminOnly, (req, res) => {
       smtpPassConfigured: smtp.smtpPassConfigured,
     },
     googleClientId: getGoogleClientId(),
+    autoBackup: getAutoBackupForAdmin(),
   });
 });
 
@@ -935,14 +944,20 @@ app.put("/api/admin/settings", adminAuth, requireAdminOnly, (req, res) => {
   if (req.body && req.body.clearFromDatabase === true) {
     for (const k of SMTP_KEYS) deleteAppSettingKey(k);
     resetMailTransporter();
-    return res.json({ ok: true, smtp: getEffectiveSmtpForAdmin(), googleClientId: getGoogleClientId() });
+    return res.json({
+      ok: true,
+      smtp: getEffectiveSmtpForAdmin(),
+      googleClientId: getGoogleClientId(),
+      autoBackup: getAutoBackupForAdmin(),
+    });
   }
   const sm = req.body?.smtp;
   const hasSmtp = sm && typeof sm === "object" && !Array.isArray(sm);
   const gRaw = req.body?.googleClientId;
   const hasGoogle = typeof gRaw === "string";
-  if (!hasSmtp && !hasGoogle) {
-    return res.status(400).json({ error: "חסר smtp או googleClientId" });
+  const hasAuto = req.body?.autoBackup && typeof req.body.autoBackup === "object";
+  if (!hasSmtp && !hasGoogle && !hasAuto) {
+    return res.status(400).json({ error: "חסר smtp, googleClientId או autoBackup" });
   }
   if (hasSmtp) {
     if (typeof sm.host === "string") setAppSettingKey("smtp_host", sm.host);
@@ -966,7 +981,35 @@ app.put("/api/admin/settings", adminAuth, requireAdminOnly, (req, res) => {
   if (hasGoogle) {
     setAppSettingKey("google_client_id", gRaw.trim());
   }
-  res.json({ ok: true, smtp: getEffectiveSmtpForAdmin(), googleClientId: getGoogleClientId() });
+  if (hasAuto) {
+    try {
+      saveAutoBackupFromRequest(req.body);
+    } catch (e) {
+      if (e.code === "INVALID_CRON") {
+        return res.status(400).json({ error: e.message || "cron לא תקין" });
+      }
+      return res.status(400).json({ error: e.message || "הגדרת גיבוי אוטומטי" });
+    }
+    restartAutoBackupScheduler({ uploadsRoot, downloadsDir });
+  }
+  res.json({
+    ok: true,
+    smtp: getEffectiveSmtpForAdmin(),
+    googleClientId: getGoogleClientId(),
+    autoBackup: getAutoBackupForAdmin(),
+  });
+});
+
+app.post("/api/admin/settings/auto-backup-test", adminAuth, requireAdminOnly, async (req, res) => {
+  try {
+    const r = await runAutoBackupFtpJob({ force: true });
+    if (r.skipped) {
+      return res.status(400).json({ error: "אין שרתי FTP מוגדרים או חסרות סיסמאות" });
+    }
+    res.json({ ok: r.ok, remoteResults: r.remoteResults });
+  } catch (e) {
+    res.status(500).json({ error: e.message || "נכשל" });
+  }
 });
 
 app.post("/api/admin/settings/mail-test", adminAuth, requireAdminOnly, async (req, res) => {
@@ -989,27 +1032,6 @@ app.post("/api/admin/settings/mail-test", adminAuth, requireAdminOnly, async (re
   res.json({ ok: true, to });
 });
 
-function walkDirRelFiles(absoluteDir, relativePrefix = "") {
-  const out = [];
-  if (!fs.existsSync(absoluteDir)) return out;
-  let entries;
-  try {
-    entries = fs.readdirSync(absoluteDir, { withFileTypes: true });
-  } catch {
-    return out;
-  }
-  for (const ent of entries) {
-    const rel = relativePrefix ? `${relativePrefix}/${ent.name}` : ent.name;
-    const full = path.join(absoluteDir, ent.name);
-    if (ent.isDirectory()) {
-      out.push(...walkDirRelFiles(full, rel));
-    } else if (ent.isFile()) {
-      out.push({ full, rel: rel.split(path.sep).join("/") });
-    }
-  }
-  return out;
-}
-
 function findPirsumRestoreRoot(extractDir) {
   const r1 = path.join(extractDir, "pirsum.db");
   if (fs.existsSync(r1) && fs.statSync(r1).isFile()) {
@@ -1030,15 +1052,6 @@ app.get("/api/admin/backup/export", adminAuth, requireAdminOnly, async (req, res
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const tempDir = path.join(tmpdir(), `pirsum-backup-tmp-${process.pid}-${Date.now()}`);
   const dbCopyPath = path.join(tempDir, "pirsum.db");
-  const manifest = {
-    format: "pirsum-backup",
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    databaseFile: "pirsum.db",
-    includes: ["uploads", "client-downloads"],
-    restoreHintHe:
-      "עצור את השרת. חלץ את ה־ZIP. אם הוגדרו DATA_DIR/UPLOADS_DIR/CLIENT_DOWNLOADS_DIR — העתק לשם: pirsum.db, תיקיית uploads, תיקיית client-downloads. אחרת: pirsum.db ליד קובץ המסד של השרת, uploads/ ל־data/uploads, client-downloads/ ל־public/downloads או לנתיב הורדות הלקוח. בשרת שונה עדכן גם GOOGLE Client ID origins ו־PUBLIC_BASE_URL. הפעל מחדש.",
-  };
 
   let cleaned = false;
   const cleanup = () => {
@@ -1075,14 +1088,7 @@ app.get("/api/admin/backup/export", adminAuth, requireAdminOnly, async (req, res
   });
 
   archive.pipe(res);
-  archive.append(JSON.stringify(manifest, null, 2), { name: "backup-manifest.json" });
-  archive.file(dbCopyPath, { name: "pirsum.db" });
-  for (const { full, rel } of walkDirRelFiles(uploadsRoot)) {
-    archive.file(full, { name: `uploads/${rel}` });
-  }
-  for (const { full, rel } of walkDirRelFiles(downloadsDir)) {
-    archive.file(full, { name: `client-downloads/${rel}` });
-  }
+  appendPirsumBackupToArchive(archive, { dbCopyPath, uploadsRoot, downloadsDir });
   try {
     await archive.finalize();
   } catch (e) {
@@ -1633,4 +1639,5 @@ server.listen(PORT, () => {
     console.log(`ניהול: http://localhost:${PORT}/admin/`);
     console.log(`WebSocket נגנים: ws://localhost:${PORT}/ws`);
   }
+  startAutoBackupScheduler({ uploadsRoot, downloadsDir });
 });

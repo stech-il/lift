@@ -1950,6 +1950,41 @@
                 </div>
               </div>
             </div>
+            <div class="panel" style="margin-top:1rem;" id="autoBackupFtpPanel">
+              <div class="panel-head">
+                <h2>גיבוי אוטומטי (FTP / FTPS)</h2>
+                <span class="hint-inline">עד 20 שרתים, לפי תזמון cron</span>
+              </div>
+              <div class="stack-gap" style="max-width:40rem;">
+                <p class="field-hint" style="margin:0 0 0.65rem;">
+                  נוצר <strong>אותו קובץ ZIP</strong> כמו «הורד גיבוי מלא», מועלה לכל השרתים המופיעים. FTPS: סמן <strong>TLS</strong> (פורט 21; ל־FTPS בפורט 990 ייתכן שצריך שרת שתומך ב־implicit — נסו רגיל או haproxy). אפשר <code dir="ltr">AUTO_BACKUP_FTP_CONFIG</code> (JSON) או <code dir="ltr">AUTO_BACKUP_DISABLE=1</code> בשרת.
+                </p>
+                <label class="field-label" style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;">
+                  <input type="checkbox" id="setAutoBackupEnabled" />
+                  הפעל גיבוי מתוזמן
+                </label>
+                <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+                  <div style="flex:1;min-width:10rem;">
+                    <label class="field-label" for="setAutoBackupCron">Cron (דקה שעה יום־בחודש יום־בשבוע)</label>
+                    <input id="setAutoBackupCron" type="text" dir="ltr" autocomplete="off" placeholder="0 0 * * *" style="width:100%;font-family:ui-monospace,monospace;" />
+                  </div>
+                  <div style="flex:1;min-width:10rem;">
+                    <label class="field-label" for="setAutoBackupTimezone">אזור זמן (IANA)</label>
+                    <input id="setAutoBackupTimezone" type="text" dir="ltr" autocomplete="off" placeholder="Asia/Jerusalem" style="width:100%;" />
+                  </div>
+                </div>
+                <p class="field-hint" style="margin:0;">לדוגמה חצות כל לילה: <code dir="ltr">0 0 * * *</code> + <code dir="ltr">Asia/Jerusalem</code></p>
+                <div>
+                  <div class="field-label" style="margin-bottom:0.4rem;">שרתי FTP</div>
+                  <div id="autoBackupFtpTargets" style="display:flex;flex-direction:column;gap:0.65rem;"></div>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnAutoBackupFtpAdd" style="margin-top:0.5rem;">+ הוסף שרת</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnAutoBackupFtpTest" title="משתמש בהגדרות שמורות בשרת. שמור לפני — יוצר ZIP ומעלה; לא דורש «הפעל גיבוי»">בדיקת העלאה ל־FTP עכשיו</button>
+                </div>
+                <p class="field-hint" style="margin:0;">שמור עם «שמור הגדרות» בראש אזור ה־SMTP/Google.</p>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -3362,6 +3397,118 @@
     document.getElementById("navAudit")?.addEventListener("click", () => navigateTo("audit"));
     document.getElementById("navSettings")?.addEventListener("click", () => navigateTo("settings"));
 
+    const AUTO_FTP_MAX = 20;
+
+    function addAutoBackupFtpRow(t) {
+      const wrap = document.getElementById("autoBackupFtpTargets");
+      if (!wrap) return;
+      if (wrap.querySelectorAll(".auto-ftp-row").length >= AUTO_FTP_MAX) {
+        toast("לכל היותר " + AUTO_FTP_MAX + " שרתים");
+        return;
+      }
+      const host = t && t.host != null ? String(t.host) : "";
+      const port = t && t.port != null && t.port !== "" ? String(t.port) : "21";
+      const user = t && t.user != null ? String(t.user) : "";
+      const pathVal = t && t.path != null && t.path !== "" ? String(t.path) : "/";
+      const secure = t && t.secure;
+      const passSet = t && t.passSet;
+      const el = document.createElement("div");
+      el.className = "auto-ftp-row";
+      el.style.cssText = "display:grid;gap:0.5rem;border:1px solid var(--line);border-radius:0.4rem;padding:0.6rem 0.65rem;align-items:end;";
+      el.setAttribute("dir", "rtl");
+      el.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 5.5rem;gap:0.5rem;align-items:end;">
+          <div>
+            <label class="field-label" style="font-size:0.78rem;">שם מארח (host)</label>
+            <input class="in-host" type="text" dir="ltr" autocomplete="off" style="width:100%;" />
+          </div>
+          <div>
+            <label class="field-label" style="font-size:0.78rem;">פורט</label>
+            <input class="in-port" type="number" min="1" max="65535" dir="ltr" style="width:100%;" />
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;align-items:end;">
+          <div>
+            <label class="field-label" style="font-size:0.78rem;">משתמש</label>
+            <input class="in-user" type="text" dir="ltr" autocomplete="off" style="width:100%;" />
+          </div>
+          <div>
+            <label class="field-label" style="font-size:0.78rem;">סיסמה</label>
+            <input class="in-pass" type="password" dir="ltr" autocomplete="new-password" style="width:100%;" />
+            <p class="field-hint in-pass-hint" style="margin:0.2rem 0 0;font-size:0.72rem;"></p>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:0.5rem;align-items:end;">
+          <div>
+            <label class="field-label" style="font-size:0.78rem;">תיקייה בצד שרת (path)</label>
+            <input class="in-path" type="text" dir="ltr" autocomplete="off" placeholder="/backups" style="width:100%;" />
+          </div>
+          <label class="field-label" style="margin:0;cursor:pointer;display:flex;align-items:center;gap:0.4rem;white-space:nowrap;padding-bottom:0.2rem;align-self:end;">
+            <input class="in-secure" type="checkbox" />
+            FTPS (TLS)
+          </label>
+        </div>
+        <div style="text-align:left;">
+          <button type="button" class="btn btn-ghost btn-sm btn-remove-ftp" style="color:var(--danger);">הסר שורה</button>
+        </div>
+      `;
+      el.querySelector(".in-host").value = host;
+      el.querySelector(".in-port").value = port;
+      el.querySelector(".in-user").value = user;
+      el.querySelector(".in-path").value = pathVal;
+      el.querySelector(".in-secure").checked = !!secure;
+      const passInp = el.querySelector(".in-pass");
+      const passHint = el.querySelector(".in-pass-hint");
+      if (passSet) {
+        passInp.value = "";
+        if (passHint) passHint.textContent = "מוגדרת סיסמה. השדה ריק = ללא שינוי.";
+      } else {
+        if (passHint) passHint.textContent = "לא הוגדרה — נדרש לחיבור.";
+      }
+      el.querySelector(".btn-remove-ftp")?.addEventListener("click", () => {
+        el.remove();
+        const addBtn = document.getElementById("btnAutoBackupFtpAdd");
+        const w = document.getElementById("autoBackupFtpTargets");
+        const n2 = w ? w.querySelectorAll(".auto-ftp-row").length : 0;
+        if (addBtn) addBtn.disabled = n2 >= AUTO_FTP_MAX;
+      });
+      wrap.appendChild(el);
+      {
+        const addBtn = document.getElementById("btnAutoBackupFtpAdd");
+        const n3 = wrap.querySelectorAll(".auto-ftp-row").length;
+        if (addBtn) addBtn.disabled = n3 >= AUTO_FTP_MAX;
+      }
+    }
+
+    function renderAutoBackupFtpRows(targets) {
+      const wrap = document.getElementById("autoBackupFtpTargets");
+      if (!wrap) return;
+      wrap.innerHTML = "";
+      const list = Array.isArray(targets) && targets.length ? targets : [{ host: "", user: "", port: 21, path: "/", secure: false, passSet: false }];
+      list.forEach((t) => addAutoBackupFtpRow(t));
+      const addBtn = document.getElementById("btnAutoBackupFtpAdd");
+      if (addBtn) addBtn.disabled = wrap.querySelectorAll(".auto-ftp-row").length >= AUTO_FTP_MAX;
+    }
+
+    function collectAutoBackupForSave() {
+      const wrap = document.getElementById("autoBackupFtpTargets");
+      const rows = wrap ? Array.from(wrap.querySelectorAll(".auto-ftp-row")) : [];
+      const targets = rows.map((row) => ({
+        host: row.querySelector(".in-host")?.value?.trim() || "",
+        port: row.querySelector(".in-port")?.value,
+        user: row.querySelector(".in-user")?.value?.trim() || "",
+        pass: row.querySelector(".in-pass")?.value || "",
+        path: row.querySelector(".in-path")?.value?.trim() || "/",
+        secure: !!row.querySelector(".in-secure")?.checked,
+      }));
+      return {
+        enabled: !!document.getElementById("setAutoBackupEnabled")?.checked,
+        cron: document.getElementById("setAutoBackupCron")?.value?.trim() || "0 0 * * *",
+        timezone: document.getElementById("setAutoBackupTimezone")?.value?.trim() || "Asia/Jerusalem",
+        targets,
+      };
+    }
+
     async function loadSettingsPage() {
       if (!isAdmin()) return;
       const data = await api("/api/admin/settings");
@@ -3388,6 +3535,14 @@
       }
       const gInp = document.getElementById("setGoogleClientId");
       if (gInp) gInp.value = data.googleClientId != null ? String(data.googleClientId) : "";
+      const ab = data.autoBackup || {};
+      const aEn = document.getElementById("setAutoBackupEnabled");
+      if (aEn) aEn.checked = !!ab.enabled;
+      const aCr = document.getElementById("setAutoBackupCron");
+      if (aCr) aCr.value = ab.cron != null && String(ab.cron).trim() ? String(ab.cron) : "0 0 * * *";
+      const aTz = document.getElementById("setAutoBackupTimezone");
+      if (aTz) aTz.value = ab.timezone != null && String(ab.timezone).trim() ? String(ab.timezone) : "Asia/Jerusalem";
+      renderAutoBackupFtpRows(ab.targets);
     }
 
     document.getElementById("btnSettingsSave")?.addEventListener("click", async () => {
@@ -3401,6 +3556,7 @@
           from: document.getElementById("setMailFrom")?.value?.trim() || "",
         },
         googleClientId: document.getElementById("setGoogleClientId")?.value?.trim() ?? "",
+        autoBackup: collectAutoBackupForSave(),
       };
       const p = document.getElementById("setSmtpPass")?.value || "";
       if (p) body.smtp.pass = p;
@@ -3415,6 +3571,38 @@
         loadSettingsPage().catch(() => {});
       } catch (e) {
         toast(e.message || "שגיאה");
+      }
+    });
+
+    document.getElementById("btnAutoBackupFtpAdd")?.addEventListener("click", () => {
+      if (!isAdmin()) return;
+      addAutoBackupFtpRow({});
+    });
+
+    document.getElementById("btnAutoBackupFtpTest")?.addEventListener("click", async () => {
+      if (!isAdmin()) return;
+      const b = document.getElementById("btnAutoBackupFtpTest");
+      const prev = b ? b.textContent : "";
+      if (b) {
+        b.disabled = true;
+        b.textContent = "מבצע…";
+      }
+      try {
+        const r = await api("/api/admin/settings/auto-backup-test", { method: "POST", body: JSON.stringify({}) });
+        const rr = r.remoteResults || [];
+        if (!rr.length) {
+          toast(r && r.error ? r.error : "אין שרתים — שמור הגדרות קודם");
+          return;
+        }
+        const lines = rr.map((x) => (x.ok ? "✓ " + x.host : "✗ " + x.host + ": " + (x.error || "")));
+        toast(lines.join(" · ") || (r.ok ? "העלאה הושלמה" : "נכשל"));
+      } catch (e) {
+        toast(e.message || "שגיאה");
+      } finally {
+        if (b) {
+          b.disabled = false;
+          b.textContent = prev;
+        }
       }
     });
 
