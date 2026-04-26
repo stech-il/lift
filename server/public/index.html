@@ -641,6 +641,42 @@
       background: linear-gradient(90deg, var(--accent-hover), var(--accent));
       transition: width 0.1s ease-out;
     }
+    #restoreProgressModal .modal-box {
+      max-width: min(32rem, 100vw - 1.5rem);
+    }
+    .restore-progress-log {
+      margin: 0.65rem 0 0;
+      padding: 0.6rem 0.75rem;
+      max-height: 14rem;
+      overflow-y: auto;
+      overflow-x: auto;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      background: var(--surface-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      text-align: right;
+      font-family: ui-monospace, "Cascadia Code", "Segoe UI", system-ui, sans-serif;
+    }
+    .restore-progress-waiting .media-upload-progress-fill {
+      width: 100% !important;
+      background: var(--muted-2);
+      animation: restorePulse 1.2s ease-in-out infinite;
+    }
+    @keyframes restorePulse {
+      0%,
+      100% {
+        opacity: 0.55;
+      }
+      50% {
+        opacity: 0.9;
+      }
+    }
+    #restoreProgressUploadWrap.restore-progress-waiting .media-upload-progress-pct {
+      color: var(--muted-2);
+    }
     .file-input {
       display: none;
     }
@@ -1243,6 +1279,27 @@
       <div class="modal-actions-row">
         <button type="button" class="btn btn-ghost" id="appDialogCancel">ביטול</button>
         <button type="button" class="btn btn-primary" id="appDialogOk">אישור</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="restoreProgressModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="restoreProgressTitle" aria-describedby="restoreProgressLog">
+    <div class="modal-box">
+      <h2 id="restoreProgressTitle">שחזור גיבוי</h2>
+      <p class="field-hint" id="restoreProgressPhase" style="margin:0 0 0.4rem;">מתכוננים…</p>
+      <div class="media-upload-progress-wrap" id="restoreProgressUploadWrap">
+        <div class="media-upload-progress-label">
+          <span id="restoreProgressUploadLabel">העלאה לשרת</span>
+          <span id="restoreProgressUploadPct" class="media-upload-progress-pct">0%</span>
+        </div>
+        <div class="media-upload-progress-track">
+          <div id="restoreProgressUploadFill" class="media-upload-progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+      <div id="restoreProgressLog" class="restore-progress-log" role="log" aria-live="polite" aria-relevant="additions"></div>
+      <div class="modal-actions-row" style="margin-top: 0.75rem;">
+        <button type="button" class="btn btn-ghost" id="btnRestoreProgressCancel" disabled>בטל</button>
+        <button type="button" class="btn btn-primary hidden" id="btnRestoreProgressClose">סגור</button>
       </div>
     </div>
   </div>
@@ -3427,9 +3484,155 @@
       }
     });
 
+    let restoreProgressXhr = null;
+    let restoreServerWaitTimer = null;
+    function formatRestoreBytes(n) {
+      if (n < 1024) return n + " B";
+      if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+      return (n / 1048576).toFixed(1) + " MB";
+    }
+    function appendRestoreLogLine(msg) {
+      const el = document.getElementById("restoreProgressLog");
+      if (!el) return;
+      const t = new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      el.textContent += (el.textContent ? "\n" : "") + "[" + t + "] " + msg;
+      el.scrollTop = el.scrollHeight;
+    }
+    function openRestoreProgressModal() {
+      const m = document.getElementById("restoreProgressModal");
+      const el = document.getElementById("restoreProgressLog");
+      const closeBtn = document.getElementById("btnRestoreProgressClose");
+      const cancelBtn = document.getElementById("btnRestoreProgressCancel");
+      if (el) el.textContent = "";
+      if (closeBtn) closeBtn.classList.add("hidden");
+      if (cancelBtn) {
+        cancelBtn.disabled = false;
+        cancelBtn.classList.remove("hidden");
+      }
+      const wrap = document.getElementById("restoreProgressUploadWrap");
+      if (wrap) wrap.classList.remove("restore-progress-waiting");
+      const fill = document.getElementById("restoreProgressUploadFill");
+      if (fill) fill.style.width = "0%";
+      const pct = document.getElementById("restoreProgressUploadPct");
+      if (pct) pct.textContent = "0%";
+      const phase = document.getElementById("restoreProgressPhase");
+      if (phase) phase.textContent = "העלאה…";
+      const lbl = document.getElementById("restoreProgressUploadLabel");
+      if (lbl) lbl.textContent = "העלאה לשרת";
+      if (m) m.classList.remove("hidden");
+    }
+    function closeRestoreProgressModal() {
+      if (restoreServerWaitTimer) {
+        clearInterval(restoreServerWaitTimer);
+        restoreServerWaitTimer = null;
+      }
+      const m = document.getElementById("restoreProgressModal");
+      if (m) m.classList.add("hidden");
+    }
+    function runBackupRestoreWithProgress(file) {
+      return new Promise((resolve, reject) => {
+        const fd = new FormData();
+        fd.append("file", file, file.name);
+        const xhr = new XMLHttpRequest();
+        restoreProgressXhr = xhr;
+        xhr.open("POST", "/api/admin/backup/restore");
+        xhr.setRequestHeader("Authorization", "Bearer " + (accessToken || ""));
+        xhr.timeout = 0;
+        xhr.upload.addEventListener("progress", (e) => {
+          if (!e.lengthComputable) return;
+          const p = Math.min(100, Math.round((e.loaded / e.total) * 100));
+          const fill = document.getElementById("restoreProgressUploadFill");
+          const pctE = document.getElementById("restoreProgressUploadPct");
+          if (fill) fill.style.width = p + "%";
+          if (pctE) pctE.textContent = p + "%";
+          const phase = document.getElementById("restoreProgressPhase");
+          if (phase) phase.textContent = "העלאה לשרת: " + p + "%";
+        });
+        xhr.upload.addEventListener("load", () => {
+          const cancelBtn = document.getElementById("btnRestoreProgressCancel");
+          if (cancelBtn) cancelBtn.disabled = true;
+          appendRestoreLogLine("העלאה הושלמה. השרת מחלץ, מאמת, מעתיק DB ומדיה. שלב זה ללא אחוז — עלול לקחת דקות בקובץ גדול.");
+          const phase = document.getElementById("restoreProgressPhase");
+          if (phase) phase.textContent = "השרת משחזר — אנא המתן";
+          const wrap = document.getElementById("restoreProgressUploadWrap");
+          if (wrap) wrap.classList.add("restore-progress-waiting");
+          const fill = document.getElementById("restoreProgressUploadFill");
+          if (fill) fill.style.width = "100%";
+          const lbl = document.getElementById("restoreProgressUploadLabel");
+          if (lbl) lbl.textContent = "מעבד בשרת (ממתין)";
+          const pctE = document.getElementById("restoreProgressUploadPct");
+          if (pctE) pctE.textContent = "—";
+          let n = 0;
+          if (restoreServerWaitTimer) clearInterval(restoreServerWaitTimer);
+          restoreServerWaitTimer = setInterval(() => {
+            n += 1;
+            if (n > 12) {
+              if (restoreServerWaitTimer) clearInterval(restoreServerWaitTimer);
+              restoreServerWaitTimer = null;
+              return;
+            }
+            appendRestoreLogLine("ממתינים לתשובה מהשרת… (" + n * 20 + " שנ׳)");
+          }, 20000);
+        });
+        xhr.onload = () => {
+          if (restoreServerWaitTimer) {
+            clearInterval(restoreServerWaitTimer);
+            restoreServerWaitTimer = null;
+          }
+          restoreProgressXhr = null;
+          const t = xhr.responseText || "";
+          let j = null;
+          try {
+            j = t ? JSON.parse(t) : null;
+          } catch {
+            j = null;
+          }
+          if (xhr.status < 200 || xhr.status >= 300) {
+            const err = (j && j.error) || t.slice(0, 500) || "שחזור נכשל";
+            appendRestoreLogLine("תשובה שגויה: HTTP " + xhr.status);
+            appendRestoreLogLine(String(err).slice(0, 2000));
+            return reject(new Error(String(err).slice(0, 200)));
+          }
+          appendRestoreLogLine("התקבלה תשובה: השחזור הוגדר. השרת יאותחל.");
+          if (j && j.preBackupDb) appendRestoreLogLine("נשמר לפני השחזור: " + j.preBackupDb);
+          return resolve({ json: j, text: t });
+        };
+        xhr.onerror = () => {
+          if (restoreServerWaitTimer) {
+            clearInterval(restoreServerWaitTimer);
+            restoreServerWaitTimer = null;
+          }
+          restoreProgressXhr = null;
+          appendRestoreLogLine("שגיאת רשת או אין תשובה");
+          reject(new Error("רשת"));
+        };
+        xhr.onabort = () => {
+          if (restoreServerWaitTimer) {
+            clearInterval(restoreServerWaitTimer);
+            restoreServerWaitTimer = null;
+          }
+          restoreProgressXhr = null;
+          appendRestoreLogLine("בוטל");
+          reject(new Error("בוטל"));
+        };
+        appendRestoreLogLine("התחלה: " + file.name + " — " + formatRestoreBytes(file.size));
+        xhr.send(fd);
+      });
+    }
+
     document.getElementById("btnBackupRestorePick")?.addEventListener("click", () => {
       if (!isAdmin()) return;
       document.getElementById("fBackupRestore")?.click();
+    });
+    document.getElementById("btnRestoreProgressCancel")?.addEventListener("click", () => {
+      if (restoreProgressXhr) {
+        try {
+          restoreProgressXhr.abort();
+        } catch (_) {}
+      }
+    });
+    document.getElementById("btnRestoreProgressClose")?.addEventListener("click", () => {
+      closeRestoreProgressModal();
     });
     document.getElementById("fBackupRestore")?.addEventListener("change", async (ev) => {
       if (!isAdmin()) return;
@@ -3450,38 +3653,40 @@
         btn.disabled = true;
         btn.textContent = "משחזר…";
       }
+      openRestoreProgressModal();
       try {
-        const fd = new FormData();
-        fd.append("file", file, file.name);
-        const r = await fetch("/api/admin/backup/restore", {
-          method: "POST",
-          headers: { Authorization: "Bearer " + (accessToken || "") },
-          body: fd,
-        });
-        const t = await r.text();
-        let j = null;
-        try {
-          j = JSON.parse(t);
-        } catch {
-          j = null;
-        }
-        if (!r.ok) {
-          toast((j && j.error) || t.slice(0, 200) || "שחזור נכשל");
-          return;
-        }
+        const { json: j } = await runBackupRestoreWithProgress(file);
         if (j && j.message) toast(j.message);
         else toast("השרת מאותחל — רענן עוד רגע");
+        closeRestoreProgressModal();
         setTimeout(() => {
           performLogout({});
         }, 2000);
       } catch (e) {
-        toast(e.message || "שגיאה בשחזור");
+        const msg = e && e.message ? e.message : String(e);
+        if (msg === "בוטל") {
+          closeRestoreProgressModal();
+          toast("העלאה בוטלה");
+        } else {
+          toast(msg.length > 120 ? "שחזור נכשל (ראו לוג)" : msg);
+          const closeBtn = document.getElementById("btnRestoreProgressClose");
+          const cancelBtn = document.getElementById("btnRestoreProgressCancel");
+          if (closeBtn) {
+            closeBtn.classList.remove("hidden");
+            closeBtn.focus();
+          }
+          if (cancelBtn) {
+            cancelBtn.classList.add("hidden");
+            cancelBtn.disabled = true;
+          }
+        }
       } finally {
         input.value = "";
         if (btn) {
           btn.disabled = false;
           btn.textContent = prev;
         }
+        restoreProgressXhr = null;
       }
     });
 

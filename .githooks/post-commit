@@ -1,0 +1,5 @@
+#!/bin/sh
+# After each commit, push to origin. Enable once: git config core.hooksPath .githooks
+# Push failure does not block the local commit.
+git push origin HEAD 2>&1 || true
+exit 0
