@@ -1877,11 +1877,17 @@
               <div class="stack-gap" style="max-width:36rem;">
                 <p class="field-hint" style="margin:0 0 0.65rem;">
                   נוצרת ארכיון עם <code>backup-manifest.json</code> (הנחיות בעברית), <code>pirsum.db</code> (הגדרות, משתמשים, מתקנים, מדיה-מטה),
-                  ותקיית <code>uploads</code> (כל קבצי המדיה לפי מתקן) ו־<code>client-downloads</code> (קובצי התקנת נגן שהועלו לשרת, אם יש). לשחזור: עצירת השירות, חילוץ ה־ZIP, והעתקת הקבצים לנתיבי
-                  <code>DATA_DIR</code> / <code>UPLOADS_DIR</code> / <code>CLIENT_DOWNLOADS_DIR</code> (או הפריסה המקומית: <code>data/</code> ו־<code>public/downloads/</code>).
-                  בדומיין חדש עדכנו <code>PUBLIC_BASE_URL</code> ו־<strong>Authorized JavaScript origins</strong> ב־Google Cloud.
+                  ותקיית <code>uploads</code> (כל קבצי המדיה לפי מתקן) ו־<code>client-downloads</code> (קובצי התקנת נגן שהועלו לשרת, אם יש).
+                  <strong>שחזור מקומי:</strong> לחצו «שחזר מ־ZIP» — נטענת <strong>מערכת ייצוא</strong> של Pirsum (אותו קובץ). אחרי ביצוע, השרת <strong>נעצר ונפתח מחדש</strong> (Render: המתנו 30–60 שנ׳ לדיפלויים; רעננו / התחברו שוב). נשמר <strong>גיבוי לפני שחזור</strong> לקובץ <code>pirsum.pre-restore-*.db</code> ליד <code>pirsum.db</code>.
                 </p>
-                <button type="button" class="btn btn-primary" id="btnBackupFullDownload" title="הורדה למחשב — דורש מנהל מערכת">הורד גיבוי מלא (ZIP)</button>
+                <p class="field-hint" style="margin:0 0 0.65rem;">
+                  לשחזור ידני: חילוץ ה־ZIP והעתקה ל־<code>DATA_DIR</code> / <code>UPLOADS_DIR</code> / <code>CLIENT_DOWNLOADS_DIR</code>. בדומיין חדש: <code>PUBLIC_BASE_URL</code> ו־<strong>Authorized JavaScript origins</strong> ב־Google Cloud.
+                </p>
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+                  <button type="button" class="btn btn-primary" id="btnBackupFullDownload" title="הורדה למחשב — דורש מנהל מערכת">הורד גיבוי מלא (ZIP)</button>
+                  <input type="file" id="fBackupRestore" class="file-input" accept=".zip,application/zip" />
+                  <button type="button" class="btn btn-danger ghost" id="btnBackupRestorePick" title="מחליף מסד, מדיה והורדות; השרת יאותחל">שחזר מ־ZIP…</button>
+                </div>
               </div>
             </div>
           </div>
@@ -3414,6 +3420,64 @@
       } catch (e) {
         toast(e.message || "שגיאה בייצוא");
       } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prev;
+        }
+      }
+    });
+
+    document.getElementById("btnBackupRestorePick")?.addEventListener("click", () => {
+      if (!isAdmin()) return;
+      document.getElementById("fBackupRestore")?.click();
+    });
+    document.getElementById("fBackupRestore")?.addEventListener("change", async (ev) => {
+      if (!isAdmin()) return;
+      const input = ev.target;
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const sure = await appConfirm(
+        "פעולה זו מחליפה את מסד הנתונים, את כל המדיה (uploads) ואת קבצי «התקנת נגן» בערכים מהגיבוי. נשמר עותק לפני השחזור (pirsum.pre-restore-*.db). אחרי השלמה השרת יאותחל — ב־Render: המתן 30–60 שנ׳ ורענן. להמשיך?",
+        { title: "שחזור מגיבוי", danger: true, okText: "שחזר" }
+      );
+      if (!sure) {
+        input.value = "";
+        return;
+      }
+      const btn = document.getElementById("btnBackupRestorePick");
+      const prev = btn ? btn.textContent : "";
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "משחזר…";
+      }
+      try {
+        const fd = new FormData();
+        fd.append("file", file, file.name);
+        const r = await fetch("/api/admin/backup/restore", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + (accessToken || "") },
+          body: fd,
+        });
+        const t = await r.text();
+        let j = null;
+        try {
+          j = JSON.parse(t);
+        } catch {
+          j = null;
+        }
+        if (!r.ok) {
+          toast((j && j.error) || t.slice(0, 200) || "שחזור נכשל");
+          return;
+        }
+        if (j && j.message) toast(j.message);
+        else toast("השרת מאותחל — רענן עוד רגע");
+        setTimeout(() => {
+          performLogout({});
+        }, 2000);
+      } catch (e) {
+        toast(e.message || "שגיאה בשחזור");
+      } finally {
+        input.value = "";
         if (btn) {
           btn.disabled = false;
           btn.textContent = prev;

@@ -9,6 +9,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import multer from "multer";
 import archiver from "archiver";
+import AdmZip from "adm-zip";
 import {
   listElevators,
   createElevator,
@@ -42,6 +43,9 @@ import {
   deleteAppSettingKey,
   setAppSettingKey,
   writeDatabaseBackupTo,
+  getDatabaseFilePath,
+  assertValidPirsumDatabaseFile,
+  closeDatabase,
 } from "./db.js";
 import {
   hashPassword,
@@ -85,6 +89,28 @@ const downloadsDir = process.env.CLIENT_DOWNLOADS_DIR?.trim()
 fs.mkdirSync(uploadsRoot, { recursive: true });
 fs.mkdirSync(publicDir, { recursive: true });
 fs.mkdirSync(downloadsDir, { recursive: true });
+
+const restoreZipMaxBytes = (() => {
+  const n = Number(process.env.RESTORE_MAX_ZIP_MB);
+  const mb = Number.isFinite(n) && n > 0 ? Math.min(3000, Math.max(10, n)) : 1500;
+  return mb * 1024 * 1024;
+})();
+
+const uploadBackupZip = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, tmpdir()),
+    filename: (req, file, cb) =>
+      cb(null, `pirsum-restore-in-${Date.now()}-${randomUUID().replace(/-/g, "").slice(0, 10)}.zip`),
+  }),
+  limits: { fileSize: restoreZipMaxBytes },
+  fileFilter: (req, file, cb) => {
+    const n = (file.originalname || "").toLowerCase();
+    if (n.endsWith(".zip") || file.mimetype === "application/zip" || file.mimetype === "application/x-zip-compressed") {
+      return cb(null, true);
+    }
+    cb(new Error("יש לבחור קובץ ‎.zip"));
+  },
+});
 
 /** תאימות לאחור: אם מוגדר, אפשר עדיין X-Admin-Token */
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "change-me-in-production";
@@ -415,6 +441,7 @@ function auditMutationLogger(req, res, next) {
   if (req.path.startsWith("/api/player/")) return next();
   if (req.path === "/api/health") return next();
   if (req.path === "/api/auth/forgot-password" || req.path === "/api/auth/reset-password") return next();
+  if (req.path === "/api/admin/backup/restore" && req.method === "POST") return next();
 
   res.on("finish", () => {
     try {
@@ -983,6 +1010,21 @@ function walkDirRelFiles(absoluteDir, relativePrefix = "") {
   return out;
 }
 
+function findPirsumRestoreRoot(extractDir) {
+  const r1 = path.join(extractDir, "pirsum.db");
+  if (fs.existsSync(r1) && fs.statSync(r1).isFile()) {
+    return { root: extractDir, db: r1 };
+  }
+  for (const ent of fs.readdirSync(extractDir, { withFileTypes: true })) {
+    if (!ent.isDirectory() || ent.name === "__MACOSX" || ent.name.startsWith("._")) continue;
+    const p = path.join(extractDir, ent.name, "pirsum.db");
+    if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+      return { root: path.join(extractDir, ent.name), db: p };
+    }
+  }
+  return null;
+}
+
 /** ייצוא מלא: מסד נתונים, uploads, קבצי הורדה ללקוח — מנהל בלבד */
 app.get("/api/admin/backup/export", adminAuth, requireAdminOnly, async (req, res) => {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
@@ -1072,6 +1114,125 @@ app.get("/api/admin/backup/export", adminAuth, requireAdminOnly, async (req, res
   }
   cleanup();
 });
+
+app.post(
+  "/api/admin/backup/restore",
+  adminAuth,
+  requireAdminOnly,
+  (req, res, next) => {
+    uploadBackupZip.single("file")(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res
+            .status(400)
+            .json({ error: "הקובץ גדול מדי. הגבלה: ‎RESTORE_MAX_ZIP_MB (ברירת מחדל 1500 מ״ב)" });
+        }
+        return res.status(400).json({ error: err.message || "העלאה נכשלה" });
+      }
+      if (!req.file) return res.status(400).json({ error: "חסר קובץ ‎.zip" });
+      next();
+    });
+  },
+  (req, res) => {
+    const extractDir = path.join(
+      tmpdir(),
+      `pirsum-restore-extract-${Date.now()}-${String(randomUUID()).replace(/-/g, "").slice(0, 8)}`
+    );
+    const zipPath = req.file.path;
+    const cleanInput = () => {
+      try {
+        fs.unlinkSync(zipPath);
+      } catch {
+        /* */
+      }
+    };
+    const cleanExtract = () => {
+      try {
+        fs.rmSync(extractDir, { recursive: true, force: true });
+      } catch {
+        /* */
+      }
+    };
+    let dbClosed = false;
+    const exitAfter = (code) => {
+      res.on("finish", () => setImmediate(() => process.exit(typeof code === "number" ? code : 0)));
+    };
+    try {
+      fs.mkdirSync(extractDir, { recursive: true });
+      const zip = new AdmZip(zipPath);
+      zip.extractAllTo(extractDir, true);
+      const found = findPirsumRestoreRoot(extractDir);
+      if (!found) {
+        cleanExtract();
+        cleanInput();
+        return res.status(400).json({ error: "בארכיון לא נמצא ‎pirsum.db" });
+      }
+      assertValidPirsumDatabaseFile(found.db);
+      const hasUploads = fs.existsSync(path.join(found.root, "uploads"));
+      const hasClientDl = fs.existsSync(path.join(found.root, "client-downloads"));
+      const targetDb = getDatabaseFilePath();
+      const prePath = path.join(path.dirname(targetDb), `pirsum.pre-restore-${Date.now()}.db`);
+      try {
+        fs.copyFileSync(targetDb, prePath);
+      } catch (e) {
+        console.error("pre-restore copy", e);
+      }
+      const actor = req.adminUser;
+      const u = getUserById(req.adminUser.id);
+      const actorId = actor?.id != null ? String(actor.id) : null;
+      let actorEmail = (u && u.email) || (actor?.email != null ? String(actor.email) : "") || "—";
+      if (actorId === "legacy" && actorEmail === "—") actorEmail = "legacy@admin";
+      const fn = String(req.file.originalname || "backup.zip").slice(0, 200);
+      insertAuditLog({
+        actorId,
+        actorEmail,
+        action: "שחזור גיבוי (ZIP) — הוחל",
+        method: "POST",
+        path: (req.originalUrl && req.originalUrl.split("?")[0]) || req.path,
+        statusCode: 200,
+        detail: "קובץ: " + fn,
+        ip: getClientIp(req),
+      });
+      closeDatabase();
+      dbClosed = true;
+      fs.copyFileSync(found.db, targetDb);
+      if (hasUploads) {
+        const srcU = path.join(found.root, "uploads");
+        if (fs.existsSync(uploadsRoot)) fs.rmSync(uploadsRoot, { recursive: true, force: true });
+        fs.mkdirSync(path.dirname(uploadsRoot), { recursive: true });
+        fs.cpSync(srcU, uploadsRoot, { recursive: true });
+      }
+      if (hasClientDl) {
+        const srcD = path.join(found.root, "client-downloads");
+        if (fs.existsSync(downloadsDir)) fs.rmSync(downloadsDir, { recursive: true, force: true });
+        fs.mkdirSync(path.dirname(downloadsDir), { recursive: true });
+        fs.cpSync(srcD, downloadsDir, { recursive: true });
+      }
+      cleanExtract();
+      cleanInput();
+      res.setHeader("Connection", "close");
+      res.json({
+        ok: true,
+        restart: true,
+        message: "השרת עוצר כדי לטעון את הגיבוי. רענן עוד 10–30 שנ׳ (או פתח מחדש כש־Render מסיים).",
+        preBackupDb: path.basename(prePath),
+      });
+      return exitAfter(0);
+    } catch (e) {
+      console.error("backup restore", e);
+      cleanExtract();
+      cleanInput();
+      if (dbClosed) {
+        if (!res.headersSent) {
+          res.setHeader("Connection", "close");
+          res.status(500).json({ error: e.message || "שחזור נכשל; השרת מופעל מחדש" });
+        }
+        return exitAfter(1);
+      }
+      return res.status(500).json({ error: e.message || "שחזור נכשל" });
+    }
+  }
+);
 
 /** תצוגת מזג אוויר מהשדות בטופס (Open-Meteo) — כל משתמש מחובר */
 app.post("/api/admin/weather-preview", adminAuth, async (req, res) => {

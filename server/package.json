@@ -11,6 +11,7 @@
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
+    "adm-zip": "^0.5.17",
     "archiver": "^7.0.1",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.6.0",
@@ -21,8 +22,8 @@
     "google-auth-library": "^9.14.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "nodemailer": "^6.9.16",
     "node-fetch": "^3.3.2",
+    "nodemailer": "^6.9.16",
     "ws": "^8.18.0"
   }
 }

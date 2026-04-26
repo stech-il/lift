@@ -572,4 +572,26 @@ export async function writeDatabaseBackupTo(destPath) {
   return db.backup(destPath);
 }
 
+/** בדיקה שקובץ הוא מסד Pirsum (רק הטבלאות users + elevators) */
+export function assertValidPirsumDatabaseFile(filePath) {
+  const t = new Database(String(filePath), { readonly: true, fileMustExist: true });
+  try {
+    const row = t
+      .prepare(
+        "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name IN ('users','elevators')"
+      )
+      .get();
+    if (!row || row.c < 2) {
+      throw new Error("הקובץ אינו גיבוי Pirsum תקין (טבלאות חיוניות חסרות)");
+    }
+  } finally {
+    t.close();
+  }
+}
+
+/** סגירת החיבור ל־DB — אחרי קריאה לפונקציה זו יש לסיים את תהליך Node (למשל process.exit) */
+export function closeDatabase() {
+  db.close();
+}
+
 export default db;
