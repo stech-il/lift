@@ -1471,14 +1471,14 @@
                     id="playerBaseUrlHint"
                     dir="ltr"
                     autocomplete="off"
-                    placeholder="https://pirsum.s-tech.co.il"
+                    placeholder="https://pirsum.s-tech.co.il/"
                     style="flex:1;min-width:180px;font:inherit;padding:0.55rem 0.7rem;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface-input);color:var(--text);"
                   />
                   <button type="button" class="btn btn-ghost btn-sm" id="btnPlayerUrlDefault" title="החזר לכתובת ברירת המחדל">ברירת מחדל</button>
                   <button type="button" class="btn btn-ghost btn-sm" id="btnPlayerUrlClear" title="מחק את הכתובת מהשדה">נקה</button>
                 </div>
                 <p class="field-hint" style="margin-top:0.4rem;">
-                  ברירת מחדל: <code dir="ltr" style="font-size:0.85em;">https://pirsum.s-tech.co.il</code> — ניתן לערוך, לנקות או להחזיר. נשמר במחשב זה בלבד (מקומי).
+                  ברירת מחדל: <code dir="ltr" style="font-size:0.85em;">https://pirsum.s-tech.co.il/</code> — ניתן לערוך, לנקות או להחזיר. נשמר במחשב זה בלבד (מקומי).
                 </p>
               </div>
               <div id="clientDownloadsWrap" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
@@ -2750,7 +2750,7 @@
     function showLogin() {
       performLogout({});
     }
-    const DEFAULT_PLAYER_SERVER_URL = "https://pirsum.s-tech.co.il";
+    const DEFAULT_PLAYER_SERVER_URL = "https://pirsum.s-tech.co.il/";
     const STORAGE_PLAYER_BASE_URL = "pirsum_admin_player_base_url";
 
     function loadPlayerBaseUrlField() {
