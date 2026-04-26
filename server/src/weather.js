@@ -27,7 +27,7 @@ export function elevatorWeatherCoords(elevatorRow) {
 
 const OPEN_METEO_HEADERS = {
   Accept: "application/json",
-  "User-Agent": "PirsumLift/1.0 (+https://github.com/stech-il/lift)",
+  "User-Agent": "Pirsum/1.0 (+https://pirsum.s-tech.co.il/)",
 };
 
 /**

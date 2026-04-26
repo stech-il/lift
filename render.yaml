@@ -4,7 +4,7 @@
 # דיסק קבוע, DATA_DIR, משתנים — כמו ב-server/render.yaml
 services:
   - type: web
-    name: lift
+    name: pirsum
     runtime: node
     rootDir: server
     buildCommand: npm install
@@ -17,7 +17,7 @@ services:
       - key: CLIENT_DOWNLOADS_DIR
         value: /data/client-downloads
       - key: PUBLIC_BASE_URL
-        value: https://lift.s-tech.co.il
+        value: https://pirsum.s-tech.co.il
       - key: ENFORCE_HTTPS
         value: "true"
       - key: JWT_SECRET
@@ -39,6 +39,6 @@ services:
       - key: GOOGLE_CLIENT_ID
         sync: false
     disk:
-      name: lift-data
+      name: pirsum-data
       mountPath: /data
       sizeGB: 1

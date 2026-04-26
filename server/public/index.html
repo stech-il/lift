@@ -730,6 +730,30 @@
     #idleLogoutModal.modal-overlay {
       z-index: 3500;
     }
+    #appDialogModal.modal-overlay {
+      z-index: 3400;
+    }
+    .modal-message-body {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .app-dialog-prompt-inp {
+      width: 100%;
+      margin-top: 0.35rem;
+      border-radius: 11px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-input);
+      color: var(--text);
+      padding: 0.58rem 0.8rem;
+      font: inherit;
+      font-size: 0.9rem;
+      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .app-dialog-prompt-inp:focus {
+      outline: none;
+      border-color: rgba(99, 102, 241, 0.45);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
     .idle-countdown {
       font-variant-numeric: tabular-nums;
       font-weight: 700;
@@ -1208,6 +1232,21 @@
     </div>
   </div>
 
+  <div id="appDialogModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="appDialogTitle" aria-describedby="appDialogMessage">
+    <div class="modal-box">
+      <h2 id="appDialogTitle">אישור</h2>
+      <p id="appDialogMessage" class="modal-lead modal-message-body"></p>
+      <div id="appDialogPromptWrap" class="hidden">
+        <label class="field-label" for="appDialogPromptInput" id="appDialogPromptLabel">ערך</label>
+        <input type="text" id="appDialogPromptInput" class="app-dialog-prompt-inp" dir="auto" autocomplete="off" />
+      </div>
+      <div class="modal-actions-row">
+        <button type="button" class="btn btn-ghost" id="appDialogCancel">ביטול</button>
+        <button type="button" class="btn btn-primary" id="appDialogOk">אישור</button>
+      </div>
+    </div>
+  </div>
+
   <div id="authWrap" class="auth-wrap">
     <div class="auth-stack">
     <div id="loginPanel">
@@ -1375,14 +1414,14 @@
                     id="playerBaseUrlHint"
                     dir="ltr"
                     autocomplete="off"
-                    placeholder="https://lift.s-tech.co.il"
+                    placeholder="https://pirsum.s-tech.co.il"
                     style="flex:1;min-width:180px;font:inherit;padding:0.55rem 0.7rem;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface-input);color:var(--text);"
                   />
                   <button type="button" class="btn btn-ghost btn-sm" id="btnPlayerUrlDefault" title="החזר לכתובת ברירת המחדל">ברירת מחדל</button>
                   <button type="button" class="btn btn-ghost btn-sm" id="btnPlayerUrlClear" title="מחק את הכתובת מהשדה">נקה</button>
                 </div>
                 <p class="field-hint" style="margin-top:0.4rem;">
-                  ברירת מחדל: <code dir="ltr" style="font-size:0.85em;">https://lift.s-tech.co.il</code> — ניתן לערוך, לנקות או להחזיר. נשמר במחשב זה בלבד (מקומי).
+                  ברירת מחדל: <code dir="ltr" style="font-size:0.85em;">https://pirsum.s-tech.co.il</code> — ניתן לערוך, לנקות או להחזיר. נשמר במחשב זה בלבד (מקומי).
                 </p>
               </div>
               <div id="clientDownloadsWrap" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
@@ -1816,7 +1855,7 @@
                   <input id="setGoogleClientId" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder="....apps.googleusercontent.com" />
                   <p class="field-hint" style="margin:0.35rem 0 0;">
                     ב־ Google Cloud → APIs &amp; Services → Credentials: צור <strong>OAuth client ID</strong> מסוג <strong>Web application</strong>.
-                    ב־Authorized JavaScript origins הוסף את כתובת ממשק הניהול (למשל <code dir="ltr">https://lift.s-tech.co.il</code>). ריק כאן = שימוש ב־<code>GOOGLE_CLIENT_ID</code> מהסביבה בלבד.
+                    ב־Authorized JavaScript origins הוסף את כתובת ממשק הניהול (למשל <code dir="ltr">https://pirsum.s-tech.co.il</code>). ריק כאן = שימוש ב־<code>GOOGLE_CLIENT_ID</code> מהסביבה בלבד.
                   </p>
                 </div>
                 <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
@@ -1828,6 +1867,21 @@
                   <p class="field-hint" style="margin:0 0 0.5rem;">למחוק את כל הערכים השמורים בבסיס הנתונים ולחזור להגדרה ממשתני סביבה בלבד:</p>
                   <button type="button" class="btn btn-danger ghost btn-sm" id="btnSettingsResetDb">אפס הגדרות DB (מייל)</button>
                 </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-top:1rem;">
+              <div class="panel-head">
+                <h2>גיבוי ומעבר שרת</h2>
+                <span class="hint-inline">ייצוא מלא לקובץ ZIP</span>
+              </div>
+              <div class="stack-gap" style="max-width:36rem;">
+                <p class="field-hint" style="margin:0 0 0.65rem;">
+                  נוצרת ארכיון עם <code>backup-manifest.json</code> (הנחיות בעברית), <code>pirsum.db</code> (הגדרות, משתמשים, מתקנים, מדיה-מטה),
+                  ותקיית <code>uploads</code> (כל קבצי המדיה לפי מתקן) ו־<code>client-downloads</code> (קובצי התקנת נגן שהועלו לשרת, אם יש). לשחזור: עצירת השירות, חילוץ ה־ZIP, והעתקת הקבצים לנתיבי
+                  <code>DATA_DIR</code> / <code>UPLOADS_DIR</code> / <code>CLIENT_DOWNLOADS_DIR</code> (או הפריסה המקומית: <code>data/</code> ו־<code>public/downloads/</code>).
+                  בדומיין חדש עדכנו <code>PUBLIC_BASE_URL</code> ו־<strong>Authorized JavaScript origins</strong> ב־Google Cloud.
+                </p>
+                <button type="button" class="btn btn-primary" id="btnBackupFullDownload" title="הורדה למחשב — דורש מנהל מערכת">הורד גיבוי מלא (ZIP)</button>
               </div>
             </div>
           </div>
@@ -2123,6 +2177,110 @@
       el.classList.add("show");
       clearTimeout(toast._t);
       toast._t = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+    let appDialogResolve = null;
+    let appDialogMode = "confirm";
+
+    function closeAppDialog(value) {
+      if (!appDialogResolve) return;
+      const fn = appDialogResolve;
+      appDialogResolve = null;
+      document.getElementById("appDialogModal")?.classList.add("hidden");
+      document.removeEventListener("keydown", appDialogKeydown, true);
+      fn(value);
+    }
+
+    function appDialogKeydown(e) {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      if (appDialogMode === "prompt") closeAppDialog(null);
+      else closeAppDialog(false);
+    }
+
+    function wireAppDialog() {
+      if (wireAppDialog._done) return;
+      wireAppDialog._done = true;
+      const modal = document.getElementById("appDialogModal");
+      const okBtn = document.getElementById("appDialogOk");
+      const cancelBtn = document.getElementById("appDialogCancel");
+      const input = document.getElementById("appDialogPromptInput");
+      okBtn.addEventListener("click", () => {
+        if (appDialogMode === "prompt") closeAppDialog(input.value);
+        else closeAppDialog(true);
+      });
+      cancelBtn.addEventListener("click", () => {
+        closeAppDialog(appDialogMode === "prompt" ? null : false);
+      });
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeAppDialog(appDialogMode === "prompt" ? null : false);
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          closeAppDialog(input.value);
+        }
+      });
+    }
+
+    /** @param {string} message @param {{ title?: string, okText?: string, cancelText?: string, danger?: boolean }} [opts] */
+    function appConfirm(message, opts) {
+      wireAppDialog();
+      const o = opts || {};
+      return new Promise((resolve) => {
+        appDialogResolve = resolve;
+        appDialogMode = "confirm";
+        const modal = document.getElementById("appDialogModal");
+        const titleEl = document.getElementById("appDialogTitle");
+        const msgEl = document.getElementById("appDialogMessage");
+        const promptWrap = document.getElementById("appDialogPromptWrap");
+        const okBtn = document.getElementById("appDialogOk");
+        const cancelBtn = document.getElementById("appDialogCancel");
+        titleEl.textContent = o.title || "אישור פעולה";
+        msgEl.textContent = message;
+        promptWrap.classList.add("hidden");
+        okBtn.textContent = o.okText || "אישור";
+        cancelBtn.textContent = o.cancelText || "ביטול";
+        okBtn.classList.remove("btn-primary", "btn-danger");
+        okBtn.classList.add(o.danger ? "btn-danger" : "btn-primary");
+        modal.classList.remove("hidden");
+        document.addEventListener("keydown", appDialogKeydown, true);
+        const focusEl = o.danger ? cancelBtn : okBtn;
+        requestAnimationFrame(() => focusEl.focus());
+      });
+    }
+
+    /** @returns {Promise<string|null>} */
+    function appPrompt(message, defaultValue, opts) {
+      wireAppDialog();
+      const o = opts || {};
+      return new Promise((resolve) => {
+        appDialogResolve = resolve;
+        appDialogMode = "prompt";
+        const modal = document.getElementById("appDialogModal");
+        const titleEl = document.getElementById("appDialogTitle");
+        const msgEl = document.getElementById("appDialogMessage");
+        const promptWrap = document.getElementById("appDialogPromptWrap");
+        const labelEl = document.getElementById("appDialogPromptLabel");
+        const input = document.getElementById("appDialogPromptInput");
+        const okBtn = document.getElementById("appDialogOk");
+        const cancelBtn = document.getElementById("appDialogCancel");
+        titleEl.textContent = o.title || "קלט";
+        msgEl.textContent = message;
+        labelEl.textContent = o.label || "ערך";
+        input.value = defaultValue != null ? String(defaultValue) : "";
+        promptWrap.classList.remove("hidden");
+        okBtn.textContent = o.okText || "המשך";
+        cancelBtn.textContent = o.cancelText || "ביטול";
+        okBtn.classList.remove("btn-danger");
+        okBtn.classList.add("btn-primary");
+        modal.classList.remove("hidden");
+        document.addEventListener("keydown", appDialogKeydown, true);
+        requestAnimationFrame(() => {
+          input.focus();
+          input.select();
+        });
+      });
     }
 
     function api(path, opts = {}) {
@@ -2422,7 +2580,8 @@
     }
 
     async function deleteOneMedia(mediaId) {
-      if (!selectedId || !confirm("למחוק פריט זה מהפלייליסט?")) return;
+      if (!selectedId) return;
+      if (!(await appConfirm("למחוק פריט זה מהפלייליסט?", { danger: true, okText: "מחק" }))) return;
       await api("/api/elevators/" + selectedId + "/media/" + mediaId, { method: "DELETE" });
       previewMediaId = null;
       await loadElevators();
@@ -2525,7 +2684,7 @@
     function showLogin() {
       performLogout({});
     }
-    const DEFAULT_PLAYER_SERVER_URL = "https://lift.s-tech.co.il";
+    const DEFAULT_PLAYER_SERVER_URL = "https://pirsum.s-tech.co.il";
     const STORAGE_PLAYER_BASE_URL = "pirsum_admin_player_base_url";
 
     function loadPlayerBaseUrlField() {
@@ -2584,7 +2743,7 @@
             del.className = "btn btn-danger ghost btn-sm";
             del.textContent = "מחק מהשרת";
             del.onclick = async () => {
-              if (!confirm("למחוק את הקובץ " + f.name + " מהשרת?")) return;
+              if (!(await appConfirm("למחוק את הקובץ " + f.name + " מהשרת?", { danger: true, okText: "מחק" }))) return;
               try {
                 await api("/api/admin/client-downloads/" + encodeURIComponent(f.name), { method: "DELETE" });
                 toast("הקובץ הוסר");
@@ -3205,7 +3364,7 @@
 
     document.getElementById("btnSettingsResetDb")?.addEventListener("click", async () => {
       if (!isAdmin()) return;
-      if (!confirm("לאפס את כל ערכי ה־SMTP השמורים בבסיס הנתונים ולחזור לערכי הסביבה?")) return;
+      if (!(await appConfirm("לאפס את כל ערכי ה־SMTP השמורים בבסיס הנתונים ולחזור לערכי הסביבה?", { title: "איפוס SMTP", danger: true, okText: "אפס" }))) return;
       try {
         await api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ clearFromDatabase: true }) });
         try {
@@ -3215,6 +3374,50 @@
         loadSettingsPage().catch(() => {});
       } catch (e) {
         toast(e.message || "שגיאה");
+      }
+    });
+
+    document.getElementById("btnBackupFullDownload")?.addEventListener("click", async () => {
+      if (!isAdmin()) return;
+      const btn = document.getElementById("btnBackupFullDownload");
+      const prev = btn ? btn.textContent : "";
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "מייצא…";
+      }
+      try {
+        const r = await fetch("/api/admin/backup/export", {
+          headers: { Authorization: "Bearer " + (accessToken || "") },
+        });
+        if (!r.ok) {
+          const t = await r.text();
+          let msg = "ייצוא נכשל";
+          try {
+            const j = JSON.parse(t);
+            if (j && j.error) msg = j.error;
+          } catch {
+            if (t) msg = t.slice(0, 200);
+          }
+          toast(msg);
+          return;
+        }
+        const blob = await r.blob();
+        const cd = r.headers.get("content-disposition") || "";
+        const m = /filename="([^"]+)"/.exec(cd);
+        const name = m ? m[1] : "pirsum-backup.zip";
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast("הגיבוי הורד");
+      } catch (e) {
+        toast(e.message || "שגיאה בייצוא");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prev;
+        }
       }
     });
 
@@ -3353,7 +3556,7 @@
         del.className = "btn btn-danger ghost btn-sm";
         del.textContent = "מחק מהשרת";
         del.onclick = async () => {
-          if (!confirm("למחוק לצמיתות את הקובץ מהשרת?\n" + row.filename)) return;
+          if (!(await appConfirm("למחוק לצמיתות את הקובץ מהשרת?\n" + row.filename, { title: "מחיקת קובץ", danger: true, okText: "מחק" }))) return;
           try {
             await api("/api/elevators/" + row.elevator_id + "/media/" + row.id, { method: "DELETE" });
             await loadElevators();
@@ -3468,7 +3671,7 @@
           del.className = "btn btn-danger ghost btn-sm";
           del.textContent = "מחק";
           del.onclick = async () => {
-            if (!confirm("למחוק את " + u.email + "?")) return;
+            if (!(await appConfirm("למחוק את " + u.email + "?", { danger: true, okText: "מחק" }))) return;
             try {
               await api("/api/users/" + u.id, { method: "DELETE" });
               await loadUsersList();
@@ -3603,7 +3806,7 @@
 
     document.getElementById("btnDeleteLogo").onclick = async () => {
       if (!selectedId || isViewer()) return;
-      if (!confirm("להסיר את הלוגו מהמסך?")) return;
+      if (!(await appConfirm("להסיר את הלוגו מהמסך?", { danger: true, okText: "הסר" }))) return;
       try {
         await api("/api/elevators/" + selectedId + "/logo", { method: "DELETE" });
         await loadElevators();
@@ -3699,7 +3902,7 @@
 
     document.getElementById("btnDeleteBg").onclick = async () => {
       if (!selectedId || isViewer()) return;
-      if (!confirm("להסיר את רקע המסך?")) return;
+      if (!(await appConfirm("להסיר את רקע המסך?", { danger: true, okText: "הסר" }))) return;
       try {
         await api("/api/elevators/" + selectedId + "/background", { method: "DELETE" });
         await loadElevators();
@@ -3742,7 +3945,7 @@
 
     document.getElementById("btnDeleteAllMedia").onclick = async () => {
       if (!selectedId) return;
-      if (!confirm("למחוק את כל קבצי המדיה מהפלייליסט?")) return;
+      if (!(await appConfirm("למחוק את כל קבצי המדיה מהפלייליסט?", { danger: true, okText: "מחק הכל" }))) return;
       await api("/api/elevators/" + selectedId + "/media", { method: "DELETE" });
       previewMediaId = null;
       await loadElevators();
@@ -3784,9 +3987,13 @@
       const e = elevators.find((x) => x.id === selectedId);
       if (!e) return;
       const def = (e.name || "מתקן") + " (העתק)";
-      const entered = window.prompt("שם למתקן המשוכפל (ריק = ברירת מחדל):", def);
+      const entered = await appPrompt("שם למתקן המשוכפל (ריק = ברירת מחדל).", def, {
+        title: "שכפול מתקן",
+        label: "שם",
+        okText: "המשך",
+      });
       if (entered === null) return;
-      if (!confirm("לשכפל את «" + (e.name || "מתקן") + "»? יועתקו הגדרות, מדיה ולוגואים. יווצר טוקן נגן חדש.")) return;
+      if (!(await appConfirm("לשכפל את «" + (e.name || "מתקן") + "»? יועתקו הגדרות, מדיה ולוגואים. יווצר טוקן נגן חדש.", { title: "אישור שכפול", okText: "שכפל" }))) return;
       const name = String(entered).trim();
       try {
         const body = name ? JSON.stringify({ name }) : JSON.stringify({});
@@ -3800,7 +4007,8 @@
     };
 
     document.getElementById("btnDeleteElev").onclick = async () => {
-      if (!selectedId || !confirm("למחוק את המעלית לחלוטין?")) return;
+      if (!selectedId) return;
+      if (!(await appConfirm("למחוק את המעלית לחלוטין?", { danger: true, okText: "מחק" }))) return;
       await api("/api/elevators/" + selectedId, { method: "DELETE" });
       selectedId = null;
       document.getElementById("detailWrap").classList.add("hidden");

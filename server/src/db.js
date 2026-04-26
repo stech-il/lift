@@ -562,4 +562,14 @@ export function setUserGoogleSub(userId, sub) {
   return getUserById(userId);
 }
 
+/** נתיב קובץ ה־SQLite (לממשק גיבוי) */
+export function getDatabaseFilePath() {
+  return dbPath;
+}
+
+/** עותק עקבי של בסיס הנתונים (מתאים לייצוא בזמן ריצה) */
+export async function writeDatabaseBackupTo(destPath) {
+  return db.backup(destPath);
+}
+
 export default db;

@@ -1,5 +1,6 @@
 import "dotenv/config";
 import http from "http";
+import { tmpdir } from "os";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import express from "express";
 import cors from "cors";
@@ -7,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import multer from "multer";
+import archiver from "archiver";
 import {
   listElevators,
   createElevator,
@@ -39,6 +41,7 @@ import {
   getUserByGoogleSub,
   deleteAppSettingKey,
   setAppSettingKey,
+  writeDatabaseBackupTo,
 } from "./db.js";
 import {
   hashPassword,
@@ -957,6 +960,117 @@ app.post("/api/admin/settings/mail-test", adminAuth, requireAdminOnly, async (re
   if (sent.skipped) return res.status(503).json({ error: "שליחת מייל לא מוגדרת" });
   if (!sent.ok) return res.status(500).json({ error: sent.error || "שליחה נכשלה" });
   res.json({ ok: true, to });
+});
+
+function walkDirRelFiles(absoluteDir, relativePrefix = "") {
+  const out = [];
+  if (!fs.existsSync(absoluteDir)) return out;
+  let entries;
+  try {
+    entries = fs.readdirSync(absoluteDir, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const ent of entries) {
+    const rel = relativePrefix ? `${relativePrefix}/${ent.name}` : ent.name;
+    const full = path.join(absoluteDir, ent.name);
+    if (ent.isDirectory()) {
+      out.push(...walkDirRelFiles(full, rel));
+    } else if (ent.isFile()) {
+      out.push({ full, rel: rel.split(path.sep).join("/") });
+    }
+  }
+  return out;
+}
+
+/** ייצוא מלא: מסד נתונים, uploads, קבצי הורדה ללקוח — מנהל בלבד */
+app.get("/api/admin/backup/export", adminAuth, requireAdminOnly, async (req, res) => {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const tempDir = path.join(tmpdir(), `pirsum-backup-tmp-${process.pid}-${Date.now()}`);
+  const dbCopyPath = path.join(tempDir, "pirsum.db");
+  const manifest = {
+    format: "pirsum-backup",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    databaseFile: "pirsum.db",
+    includes: ["uploads", "client-downloads"],
+    restoreHintHe:
+      "עצור את השרת. חלץ את ה־ZIP. אם הוגדרו DATA_DIR/UPLOADS_DIR/CLIENT_DOWNLOADS_DIR — העתק לשם: pirsum.db, תיקיית uploads, תיקיית client-downloads. אחרת: pirsum.db ליד קובץ המסד של השרת, uploads/ ל־data/uploads, client-downloads/ ל־public/downloads או לנתיב הורדות הלקוח. בשרת שונה עדכן גם GOOGLE Client ID origins ו־PUBLIC_BASE_URL. הפעל מחדש.",
+  };
+
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    } catch {
+      /* */
+    }
+  };
+
+  try {
+    fs.mkdirSync(tempDir, { recursive: true });
+    await writeDatabaseBackupTo(dbCopyPath);
+  } catch (e) {
+    cleanup();
+    console.error("database backup", e);
+    return res.status(500).json({ error: e.message || "גיבוי מסד נתונים נכשל" });
+  }
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="pirsum-backup-${stamp}.zip"`);
+
+  const archive = archiver("zip", { zlib: { level: 6 } });
+  archive.on("error", (err) => {
+    console.error("archiver", err);
+    cleanup();
+    if (!res.headersSent) {
+      res.status(500).json({ error: "יצירת הארכיון נכשלה" });
+    } else {
+      res.end();
+    }
+  });
+
+  archive.pipe(res);
+  archive.append(JSON.stringify(manifest, null, 2), { name: "backup-manifest.json" });
+  archive.file(dbCopyPath, { name: "pirsum.db" });
+  for (const { full, rel } of walkDirRelFiles(uploadsRoot)) {
+    archive.file(full, { name: `uploads/${rel}` });
+  }
+  for (const { full, rel } of walkDirRelFiles(downloadsDir)) {
+    archive.file(full, { name: `client-downloads/${rel}` });
+  }
+  try {
+    await archive.finalize();
+  } catch (e) {
+    console.error("finalize archive", e);
+    cleanup();
+    if (!res.headersSent) {
+      res.status(500).json({ error: e.message || "אירכוב נכשל" });
+    }
+    return;
+  }
+  try {
+    const actor = req.adminUser;
+    const actorId = actor?.id != null ? String(actor.id) : null;
+    const u = getUserById(req.adminUser.id);
+    let actorEmail = (u && u.email) || (actor?.email != null ? String(actor.email) : "") || "—";
+    if (actorId === "legacy" && actorEmail === "—") actorEmail = "legacy@admin";
+    insertAuditLog({
+      actorId,
+      actorEmail,
+      action: "ייצוא גיבוי מלא (ZIP)",
+      method: "GET",
+      path: (req.originalUrl && req.originalUrl.split("?")[0]) || req.path,
+      statusCode: 200,
+      detail: "מסד נתונים, uploads, client-downloads",
+      ip: getClientIp(req),
+    });
+  } catch (e) {
+    console.error("audit log (backup export)", e);
+  }
+  cleanup();
 });
 
 /** תצוגת מזג אוויר מהשדות בטופס (Open-Meteo) — כל משתמש מחובר */
